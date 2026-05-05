@@ -53,7 +53,7 @@ data/processed/*
 !data/processed/README.md
 
 # --- Models (never commit large model weights) ---
-models/
+/models/
 *.pt
 *.pth
 *.bin
