@@ -6,6 +6,7 @@ from wilma.data.cleaners import (
     fix_encoding,
     is_valid_message,
     normalize_whitespace,
+    strip_html,
 )
 
 
@@ -45,3 +46,16 @@ def test_is_valid_message_rejects_too_short() -> None:
     assert not is_valid_message("hi")
     assert not is_valid_message("")
     assert not is_valid_message(None)  # type: ignore[arg-type]
+
+def test_strip_html_removes_tags() -> None:
+    out = strip_html("<p>Hello <b>world</b></p>")
+    assert "Hello" in out
+    assert "world" in out
+    assert "<" not in out
+    assert ">" not in out
+
+
+def test_strip_html_decodes_entities() -> None:
+    assert "&" in strip_html("Tom &amp; Jerry")
+    assert strip_html("Price: &#36;100") == "Price: $100"
+
