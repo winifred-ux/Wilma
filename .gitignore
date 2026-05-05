@@ -76,3 +76,6 @@ Desktop.ini
 *.tmp
 *.bak
 ~*
+
+# --- Evaluation results & metrics ---
+results/
