@@ -13,6 +13,7 @@ specific phone numbers or URLs.
 from __future__ import annotations
 
 import re
+import html as _html
 from typing import Final
 
 import ftfy
@@ -46,11 +47,22 @@ _MONEY_PATTERN: Final = re.compile(
 )
 
 _MULTI_WS: Final = re.compile(r"\s+")
+_HTML_TAG_PATTERN: Final = re.compile(r"<[^>]+>")
 
 # ---------------------------------------------------------------------------
 # Cleaning functions
 # ---------------------------------------------------------------------------
 
+
+def strip_html(text: str) -> str:
+    """Remove HTML tags and decode HTML entities (&amp;, &nbsp;, etc.).
+
+    Crude — uses regex rather than a real HTML parser. Sufficient for
+    scam-email cleaning where we just need to extract readable text;
+    not appropriate for security-sensitive HTML processing.
+    """
+    text = _HTML_TAG_PATTERN.sub(" ", text)
+    return _html.unescape(text)
 
 def fix_encoding(text: str) -> str:
     """Repair mojibake, smart quotes, and Unicode damage."""
