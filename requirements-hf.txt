@@ -1,0 +1,21 @@
+# Wilma API runtime dependencies (Hugging Face Spaces).
+# Slim version of requirements.txt -- only what the API needs.
+
+# Core ML
+torch==2.5.1
+transformers==4.46.3
+
+# Inference / explanations
+captum==0.7.0
+
+# Data handling (used at request time)
+pandas==2.2.3
+numpy==1.26.4
+
+# API serving
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+
+# Misc
+ftfy==6.3.1

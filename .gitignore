@@ -81,3 +81,5 @@ Desktop.ini
 results/
 # --- Generated visualization output (HTML demos) ---
 /*.html
+# Training checkpoints (full model copies, not needed for inference)
+models/*/checkpoints/
