@@ -79,3 +79,5 @@ Desktop.ini
 
 # --- Evaluation results & metrics ---
 results/
+# --- Generated visualization output (HTML demos) ---
+/*.html
