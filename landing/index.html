@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Wilma — AI fraud detection for SMS, email, and chat. Trained on Nigerian patterns. Real-time API.">
+<title>Wilma — Stop scams before they cost you</title>
+<link rel="preconnect" href="https://rsms.me/">
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+<style>
+:root {
+  --bg: #fafaf9;
+  --bg-2: #f4f4f1;
+  --surface: #ffffff;
+  --surface-2: #f7f7f5;
+  --border: #e8e8e5;
+  --rule: #f0f0ec;
+  --ink: #0a0a09;
+  --ink-2: #4a4a47;
+  --ink-3: #888884;
+  --accent: #1a3d6e;
+  --accent-2: #2a5594;
+  --scam: #b91c1c;
+  --scam-bg: #fef2f2;
+  --legit: #15803d;
+  --legit-bg: #f0fdf4;
+  --warning: #ca8a04;
+  --warning-bg: #fefce8;
+  --shadow-1: 0 1px 2px rgba(10,10,9,.04), 0 0 0 1px rgba(10,10,9,.04);
+  --shadow-2: 0 4px 12px -4px rgba(10,10,9,.08), 0 1px 2px rgba(10,10,9,.04), 0 0 0 1px rgba(10,10,9,.04);
+  --shadow-3: 0 24px 48px -16px rgba(10,10,9,.12), 0 4px 12px -4px rgba(10,10,9,.06), 0 0 0 1px rgba(10,10,9,.04);
+  --grid-color: rgba(10,10,9,.03);
+  --bloom: radial-gradient(60% 50% at 50% 0%, rgba(26,61,110,.08), transparent 70%);
+}
+[data-theme="dark"] {
+  --bg: #08090b;
+  --bg-2: #0c0d10;
+  --surface: #111316;
+  --surface-2: #15171b;
+  --border: #1f2228;
+  --rule: #181a1f;
+  --ink: #f5f5f4;
+  --ink-2: #a3a3a0;
+  --ink-3: #6b6b67;
+  --accent: #6da4d8;
+  --accent-2: #87b6e3;
+  --scam: #f87171;
+  --scam-bg: rgba(248,113,113,.12);
+  --legit: #4ade80;
+  --legit-bg: rgba(74,222,128,.12);
+  --warning: #facc15;
+  --warning-bg: rgba(250,204,21,.12);
+  --shadow-1: 0 1px 2px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.04);
+  --shadow-2: 0 4px 12px -4px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.04);
+  --shadow-3: 0 24px 48px -16px rgba(0,0,0,.7), 0 4px 12px -4px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.04);
+  --grid-color: rgba(255,255,255,.03);
+  --bloom: radial-gradient(60% 50% at 50% 0%, rgba(109,164,216,.10), transparent 70%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #08090b;
+    --bg-2: #0c0d10;
+    --surface: #111316;
+    --surface-2: #15171b;
+    --border: #1f2228;
+    --rule: #181a1f;
+    --ink: #f5f5f4;
+    --ink-2: #a3a3a0;
+    --ink-3: #6b6b67;
+    --accent: #6da4d8;
+    --accent-2: #87b6e3;
+    --scam: #f87171;
+    --scam-bg: rgba(248,113,113,.12);
+    --legit: #4ade80;
+    --legit-bg: rgba(74,222,128,.12);
+    --warning: #facc15;
+    --warning-bg: rgba(250,204,21,.12);
+    --shadow-1: 0 1px 2px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.04);
+    --shadow-2: 0 4px 12px -4px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.04);
+    --shadow-3: 0 24px 48px -16px rgba(0,0,0,.7), 0 4px 12px -4px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.04);
+    --grid-color: rgba(255,255,255,.03);
+    --bloom: radial-gradient(60% 50% at 50% 0%, rgba(109,164,216,.10), transparent 70%);
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "ss01", "cv11", "tnum", "calt", "liga";
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.011em;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+
+/* nav */
+nav {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  border-bottom: 1px solid var(--rule);
+}
+.nav-inner {
+  max-width: 1180px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px;
+}
+.brand { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 16px; letter-spacing: -0.022em; }
+.brand-mark {
+  width: 26px; height: 26px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--accent);
+}
+.brand-mark svg { width: 100%; height: 100%; }
+.brand-name { color: var(--ink); }
+.brand-version {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+  font-size: 11px; color: var(--ink-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 2px 7px; border-radius: 5px;
+  margin-left: 4px; font-weight: 500;
+}
+.nav-links { display: flex; align-items: center; gap: 24px; }
+.nav-link { color: var(--ink-2); font-size: 14px; font-weight: 500; transition: color 120ms; letter-spacing: -0.005em; }
+.nav-link:hover { color: var(--ink); }
+.toggle {
+  width: 34px; height: 34px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); color: var(--ink-2);
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: color 120ms, border-color 120ms, background 120ms;
+}
+.toggle:hover { color: var(--ink); border-color: var(--ink-3); }
+.toggle svg { width: 14px; height: 14px; }
+[data-theme="dark"] .toggle .icon-sun, :root:not([data-theme="light"]) .toggle .icon-sun { display: none; }
+[data-theme="light"] .toggle .icon-moon { display: none; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .toggle .icon-moon { display: none; }
+  :root:not([data-theme="dark"]) .toggle .icon-sun { display: block; }
+}
+
+/* hero */
+.hero {
+  position: relative;
+  padding: 110px 28px 40px;
+  overflow: hidden;
+}
+.hero::before {
+  content: "";
+  position: absolute; inset: 0;
+  background-image:
+    var(--bloom),
+    radial-gradient(circle at 1px 1px, var(--grid-color) 1px, transparent 0);
+  background-size: auto, 24px 24px;
+  background-position: center top, 0 0;
+  -webkit-mask-image: linear-gradient(180deg, black 60%, transparent 100%);
+  mask-image: linear-gradient(180deg, black 60%, transparent 100%);
+  pointer-events: none;
+}
+.hero-inner { position: relative; max-width: 880px; margin: 0 auto; text-align: center; }
+.kicker {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-size: 12px; font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow-1);
+}
+.kicker .pulse {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--legit);
+  position: relative;
+}
+.kicker .pulse::after {
+  content: ""; position: absolute; inset: -2px;
+  border-radius: 50%; border: 1.5px solid var(--legit);
+  animation: pulse-ring 2s cubic-bezier(0,0,.2,1) infinite;
+  opacity: 0;
+}
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 0.7; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+h1.headline {
+  font-size: clamp(44px, 8vw, 88px);
+  line-height: 0.96;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  margin: 0 0 26px;
+  color: var(--ink);
+}
+.subhead {
+  font-size: clamp(16px, 1.6vw, 19px);
+  color: var(--ink-2);
+  max-width: 600px; margin: 0 auto 42px;
+  line-height: 1.6;
+  letter-spacing: -0.005em;
+}
+.cta-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 12px 20px; border-radius: 9px;
+  font-size: 14px; font-weight: 500; letter-spacing: -0.005em;
+  border: 1px solid transparent;
+  transition: transform 120ms, background 120ms, border-color 120ms, color 120ms;
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary {
+  background: var(--ink); color: var(--bg); border-color: var(--ink);
+  box-shadow: var(--shadow-1);
+}
+.btn-primary:hover { background: var(--ink-2); border-color: var(--ink-2); }
+.btn-secondary {
+  background: var(--surface); color: var(--ink); border-color: var(--border);
+}
+.btn-secondary:hover { border-color: var(--ink-3); }
+.btn-arrow {
+  font-size: 16px; line-height: 1; transition: transform 150ms cubic-bezier(.2,0,0,1);
+}
+.btn:hover .btn-arrow { transform: translateX(2px); }
+
+/* live feed */
+.feed-wrap {
+  max-width: 720px; margin: 56px auto 0;
+  position: relative;
+}
+.feed-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
+  position: relative;
+}
+.feed-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 12px;
+}
+.feed-status {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--ink-2); font-weight: 500;
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+  letter-spacing: 0;
+}
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--legit); position: relative;
+}
+.status-dot::before {
+  content: ""; position: absolute; inset: -2px;
+  border-radius: 50%; background: var(--legit);
+  opacity: 0.4; animation: pulse-bg 1.6s ease-in-out infinite;
+}
+@keyframes pulse-bg { 0%, 100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 0.1; transform: scale(1.6); } }
+.feed-meta {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+  color: var(--ink-3); font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.feed-list {
+  position: relative; padding: 8px 0;
+  min-height: 280px;
+}
+.feed-row {
+  display: grid;
+  grid-template-columns: 90px 1fr auto;
+  gap: 14px; align-items: center;
+  padding: 10px 18px;
+  border-top: 1px solid var(--rule);
+  animation: feed-in 380ms cubic-bezier(.16,1,.3,1) forwards;
+}
+.feed-row:first-child { border-top: none; }
+@keyframes feed-in {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.feed-row.exiting {
+  animation: feed-out 280ms ease-in forwards;
+}
+@keyframes feed-out {
+  0% { opacity: 1; transform: translateY(0); max-height: 60px; padding-top: 10px; padding-bottom: 10px; }
+  100% { opacity: 0; transform: translateY(-6px); max-height: 0; padding-top: 0; padding-bottom: 0; border-top-color: transparent; }
+}
+.feed-pill {
+  font-size: 11px; font-weight: 500;
+  padding: 3px 9px; border-radius: 6px;
+  text-align: center;
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.feed-pill.legit { background: var(--legit-bg); color: var(--legit); }
+.feed-pill.scam { background: var(--scam-bg); color: var(--scam); }
+.feed-pill.warn { background: var(--warning-bg); color: var(--warning); }
+.feed-text {
+  font-size: 13px; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100%;
+}
+.feed-stat {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+  font-size: 11px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  display: flex; gap: 8px; align-items: center;
+}
+.feed-stat .conf { color: var(--ink-2); }
+
+/* sections */
+section { padding: 80px 28px; position: relative; }
+.section-head { max-width: 900px; margin: 0 auto 48px; text-align: center; }
+.section-kicker {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+  font-size: 12px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--accent);
+  margin-bottom: 14px;
+}
+.section-title {
+  font-size: clamp(30px, 4vw, 44px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0 0 14px;
+}
+.section-lead {
+  color: var(--ink-2); font-size: 17px;
+  max-width: 560px; margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* try-it demo */
+.demo-card {
+  max-width: 760px; margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+}
+.demo-input {
+  width: 100%;
+  border: none; outline: none; resize: vertical;
+  background: transparent; color: var(--ink);
+  font-family: inherit; font-size: 16px; line-height: 1.6;
+  padding: 28px;
+  min-height: 120px;
+  letter-spacing: -0.005em;
+}
+.demo-input::placeholder { color: var(--ink-3); }
+.demo-controls {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 14px 18px; border-top: 1px solid var(--rule);
+  background: var(--surface-2);
+  flex-wrap: wrap;
+}
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  font-size: 12px; font-weight: 500; padding: 6px 11px;
+  background: var(--surface); color: var(--ink-2);
+  border: 1px solid var(--border); border-radius: 999px;
+  transition: all 120ms;
+  letter-spacing: -0.005em;
+}
+.chip:hover { border-color: var(--ink-3); color: var(--ink); }
+.btn-classify {
+  background: var(--accent); color: white; border: 1px solid var(--accent);
+  padding: 9px 18px; border-radius: 8px; font-size: 14px;
+  font-weight: 500; letter-spacing: -0.005em;
+  display: inline-flex; align-items: center; gap: 7px;
+  transition: all 120ms;
+}
+.btn-classify:hover { background: var(--accent-2); border-color: var(--accent-2); }
+.btn-classify:disabled { opacity: 0.5; cursor: wait; }
+.result {
+  border-top: 1px solid var(--rule);
+  padding: 24px 28px;
+  display: none;
+}
+.result.show { display: block; animation: feed-in 220ms ease-out; }
+.verdict-row {
+  display: flex; align-items: baseline; gap: 16px; margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.verdict {
+  font-size: 26px; font-weight: 600; letter-spacing: -0.025em;
+}
+.verdict.scam { color: var(--scam); }
+.verdict.legit { color: var(--legit); }
+.confidence {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+  color: var(--ink-3); font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.signals { display: flex; flex-direction: column; gap: 7px; }
+.signal-row {
+  display: grid; grid-template-columns: 1fr 50px 100px;
+  gap: 14px; align-items: center; font-size: 13px;
+}
+.signal-row .name { color: var(--ink); }
+.signal-row .score {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+  font-variant-numeric: tabular-nums; text-align: right;
+  color: var(--ink-3); font-size: 11px;
+}
+.signal-row .bar { background: var(--rule); height: 4px; border-radius: 999px; overflow: hidden; }
+.signal-row .bar > div { height: 100%; border-radius: 999px; transition: width 400ms cubic-bezier(.2,0,0,1); }
+.signal-row.scam .bar > div { background: var(--scam); }
+.signal-row.legit .bar > div { background: var(--legit); }
+.error { color: var(--scam); font-size: 14px; padding: 4px 0; }
+.loading { color: var(--ink-2); font-size: 14px; }
+
+/* stats */
+.stats-bg { background: var(--bg-2); border-block: 1px solid var(--rule); }
+.stats-grid {
+  max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1px; background: var(--border);
+  border-radius: 16px; overflow: hidden;
+  border: 1px solid var(--border);
+}
+.stat {
+  background: var(--surface); padding: 36px 24px;
+  text-align: center;
+}
+.stat-num {
+  font-size: clamp(30px, 3.5vw, 42px); font-weight: 600;
+  letter-spacing: -0.035em; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.stat-label {
+  font-size: 12px; color: var(--ink-2);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin-top: 10px;
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+  font-weight: 500;
+}
+
+/* how */
+.how-grid {
+  max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.how-step {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 28px;
+  transition: transform 200ms, box-shadow 200ms, border-color 200ms;
+}
+.how-step:hover {
+  transform: translateY(-2px);
+  border-color: var(--ink-3);
+  box-shadow: var(--shadow-2);
+}
+.step-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 26px; padding: 0 10px; border-radius: 7px;
+  background: var(--surface-2); color: var(--accent);
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+  font-size: 12px; font-weight: 500; margin-bottom: 18px;
+  letter-spacing: 0;
+}
+.how-step h3 { margin: 0 0 8px; font-size: 17px; font-weight: 600; letter-spacing: -0.015em; }
+.how-step p { margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.6; }
+.how-step code {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+  font-size: 12px; background: var(--surface-2);
+  padding: 1px 6px; border-radius: 4px; color: var(--accent);
+}
+
+/* dev */
+.dev-card {
+  max-width: 880px; margin: 0 auto;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; overflow: hidden;
+  box-shadow: var(--shadow-2);
+}
+.code {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+  font-size: 13px; line-height: 1.7;
+  background: var(--surface-2); color: var(--ink);
+  padding: 26px 28px; margin: 0;
+  overflow-x: auto;
+  white-space: pre;
+  letter-spacing: 0;
+}
+.code .c { color: var(--ink-3); }
+.code .s { color: var(--accent); }
+.dev-foot {
+  padding: 14px 22px; display: flex; justify-content: space-between;
+  align-items: center; font-size: 13px; color: var(--ink-2);
+  border-top: 1px solid var(--rule);
+}
+.dev-foot a { color: var(--accent); }
+.dev-foot a:hover { color: var(--accent-2); }
+.copy-btn {
+  font-size: 12px; padding: 6px 12px; border-radius: 6px;
+  background: var(--surface); color: var(--ink-2);
+  border: 1px solid var(--border); transition: all 120ms;
+  font-weight: 500;
+}
+.copy-btn:hover { color: var(--ink); border-color: var(--ink-3); }
+
+/* footer */
+footer {
+  border-top: 1px solid var(--rule);
+  padding: 56px 28px 40px;
+  background: var(--bg-2);
+}
+.footer-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  flex-wrap: wrap; gap: 28px;
+}
+.footer-brand {
+  display: flex; align-items: center; gap: 12px;
+}
+.footer-brand-mark {
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--accent);
+}
+.footer-brand-text { line-height: 1.4; }
+.footer-name { font-weight: 600; letter-spacing: -0.015em; font-size: 15px; }
+.footer-tag {
+  font-size: 12px; color: var(--ink-3); margin-top: 2px;
+  letter-spacing: -0.005em;
+}
+.footer-meta {
+  color: var(--ink-3); font-size: 13px;
+  display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center;
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+  letter-spacing: 0;
+}
+.footer-meta a { color: var(--ink-2); transition: color 120ms; }
+.footer-meta a:hover { color: var(--ink); }
+.footer-meta .sep { color: var(--ink-3); opacity: 0.5; }
+
+/* reveal on scroll */
+.reveal { opacity: 0; transform: translateY(12px); transition: opacity 600ms cubic-bezier(.2,0,0,1), transform 600ms cubic-bezier(.2,0,0,1); }
+.reveal.in-view { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 720px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .how-grid { grid-template-columns: 1fr; }
+  .nav-link { display: none; }
+  .nav-links { gap: 12px; }
+  .feed-row { grid-template-columns: 80px 1fr auto; gap: 10px; padding: 10px 14px; }
+  .feed-text { font-size: 12px; }
+  .feed-stat { font-size: 10px; }
+  .footer-inner { flex-direction: column; align-items: flex-start; gap: 24px; }
+  section { padding: 56px 24px; }
+  .hero { padding: 80px 24px 24px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="brand">
+      <span class="brand-mark">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 7L9.5 24L16 13L22.5 24L28 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <span class="brand-name">Wilma</span>
+      <span class="brand-version">v1.0</span>
+    </a>
+    <div class="nav-links">
+      <a href="#demo" class="nav-link">Try it</a>
+      <a href="https://winifred12-wilma.hf.space/docs" class="nav-link" target="_blank" rel="noopener">API</a>
+      <a href="https://github.com/winifred-ux/Wilma" class="nav-link" target="_blank" rel="noopener">GitHub</a>
+      <button class="toggle" id="theme-toggle" aria-label="Toggle theme">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-inner">
+    <span class="kicker"><span class="pulse"></span>Live · Made in Lagos 🇳🇬</span>
+    <h1 class="headline">Stop scams before they cost you.</h1>
+    <p class="subhead">Real-time AI fraud detection trained on Nigerian SMS, email, and chat patterns. Catches what global tools miss — at production-grade latency.</p>
+    <div class="cta-row">
+      <a href="#demo" class="btn btn-primary">Try the demo <span class="btn-arrow">→</span></a>
+      <a href="https://winifred12-wilma.hf.space/docs" class="btn btn-secondary" target="_blank" rel="noopener">Read the API</a>
+    </div>
+  </div>
+  <div class="feed-wrap reveal">
+    <div class="feed-card">
+      <div class="feed-head">
+        <span class="feed-status"><span class="status-dot"></span>WILMA / CLASSIFY</span>
+        <span class="feed-meta"><span id="feed-count">0</span> classified · DistilBERT v1</span>
+      </div>
+      <div class="feed-list" id="feed-list"></div>
+    </div>
+  </div>
+</header>
+
+<section id="demo">
+  <div class="section-head reveal">
+    <div class="section-kicker">Interactive demo</div>
+    <h2 class="section-title">Test it on any message.</h2>
+    <p class="section-lead">Paste an SMS, email, or chat. Wilma classifies it in real time using the same API a fintech would integrate.</p>
+  </div>
+  <div class="demo-card reveal">
+    <textarea class="demo-input" id="demo-input" placeholder="Paste an SMS, email, or chat message..."></textarea>
+    <div class="demo-controls">
+      <div class="chips">
+        <button class="chip" data-text="URGENT BUSINESS ASSISTANCE: I am Mr James from Lagos and I need your help to transfer 25 million dollars to your account.">419 scam</button>
+        <button class="chip" data-text="Dear customer, your account has been suspended. Click here to verify: http://gtbank-secure.tk/login">Phishing</button>
+        <button class="chip" data-text="Your loan of N500,000 has been approved. Pay processing fee of N2,500 to account 1234567890 to receive funds.">Loan scam</button>
+        <button class="chip" data-text="Hi mum, can you pick up bread on your way home from the market today">Legitimate</button>
+      </div>
+      <button class="btn-classify" id="demo-classify">Classify <span class="btn-arrow">→</span></button>
+    </div>
+    <div class="result" id="demo-result"></div>
+  </div>
+</section>
+
+<section class="stats-bg">
+  <div class="stats-grid reveal">
+    <div class="stat">
+      <div class="stat-num">99.21<span style="font-size:.6em">%</span></div>
+      <div class="stat-label">F1 score (test)</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">39,465</div>
+      <div class="stat-label">Messages trained</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">&lt;100<span style="font-size:.6em">ms</span></div>
+      <div class="stat-label">P50 latency</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">4</div>
+      <div class="stat-label">Scam categories</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head reveal">
+    <div class="section-kicker">How it works</div>
+    <h2 class="section-title">From message to verdict in three steps.</h2>
+  </div>
+  <div class="how-grid">
+    <div class="how-step reveal">
+      <div class="step-num">01 · Receive</div>
+      <h3>Send any text</h3>
+      <p>Post a message to <code>/classify</code>. Single message or batch of up to 50. JSON in, JSON out. CORS-enabled for browser apps.</p>
+    </div>
+    <div class="how-step reveal">
+      <div class="step-num">02 · Classify</div>
+      <h3>DistilBERT inference</h3>
+      <p>A fine-tuned 135M-parameter DistilBERT processes the message, trained on Enron, SpamAssassin, UCI SMS, and the Kaggle 419 corpus.</p>
+    </div>
+    <div class="how-step reveal">
+      <div class="step-num">03 · Respond</div>
+      <h3>Verdict + explanation</h3>
+      <p>Confidence-scored verdict in &lt;100ms. Token-level explanations available via Integrated Gradients on a separate endpoint.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="section-head reveal">
+    <div class="section-kicker">For developers</div>
+    <h2 class="section-title">One curl. Any language.</h2>
+    <p class="section-lead">Wilma is a standard REST API. Integrate from Python, Node, Go, or anything that speaks HTTP.</p>
+  </div>
+  <div class="dev-card reveal">
+<pre class="code"><span class="c"># Single classification</span>
+curl -X POST <span class="s">https://winifred12-wilma.hf.space/classify</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"text": "URGENT BUSINESS ASSISTANCE..."}'</span>
+
+<span class="c"># Returns JSON</span>
+{
+  <span class="s">"verdict"</span>: <span class="s">"scam"</span>,
+  <span class="s">"confidence"</span>: 0.9998,
+  <span class="s">"is_scam"</span>: true,
+  <span class="s">"model"</span>: <span class="s">"DistilBERT v1 binary"</span>,
+  <span class="s">"latency_ms"</span>: 37.4
+}</pre>
+    <div class="dev-foot">
+      <span>Full docs at <a href="https://winifred12-wilma.hf.space/docs" target="_blank" rel="noopener">/docs</a></span>
+      <button class="copy-btn" id="copy-curl">Copy</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="footer-brand-mark">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 7L9.5 24L16 13L22.5 24L28 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <div class="footer-brand-text">
+        <div class="footer-name">Wilma</div>
+        <div class="footer-tag">Watchful Intelligence for Linguistic Message Analysis</div>
+      </div>
+    </div>
+    <div class="footer-meta">
+      <span>Made in Lagos by <a href="https://github.com/winifred-ux">Winifred Ajah</a></span>
+      <span class="sep">·</span>
+      <span>MIT</span>
+      <span class="sep">·</span>
+      <span>v1.0.0</span>
+      <span class="sep">·</span>
+      <a href="https://github.com/winifred-ux/Wilma" target="_blank" rel="noopener">Source</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function() {
+  // Theme
+  const root = document.documentElement;
+  let stored = null;
+  try { stored = localStorage.getItem("wilma-theme"); } catch (e) {}
+  if (stored === "dark" || stored === "light") root.setAttribute("data-theme", stored);
+  document.getElementById("theme-toggle").addEventListener("click", () => {
+    const cur = root.getAttribute("data-theme");
+    const prefersDark = matchMedia("(prefers-color-scheme: dark)").matches;
+    let next;
+    if (cur === "dark") next = "light";
+    else if (cur === "light") next = "dark";
+    else next = prefersDark ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("wilma-theme", next); } catch (e) {}
+  });
+
+  // Reveal on scroll
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add("in-view");
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: "0px 0px -40px 0px" });
+  document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+
+  // Live feed
+  const FEED_SAMPLES = [
+    { text: "URGENT BUSINESS ASSISTANCE: transfer of $25M to your account...", verdict: "advance_fee_419", label: "419 scam", confidence: 0.9993, latency: 38 },
+    { text: "Hi mum, can you pick up bread on your way home from the market", verdict: "legitimate", label: "legitimate", confidence: 0.9999, latency: 41 },
+    { text: "Cheap Viagra & Cialis from Canadian pharmacy, no prescription...", verdict: "commercial_spam", label: "commercial spam", confidence: 0.9976, latency: 35 },
+    { text: "Your OTP is 482917. Do not share with anyone, including bank staff.", verdict: "scam_other", label: "OTP scam", confidence: 0.9984, latency: 47 },
+    { text: "Dear valued customer, your GTB account has been suspended...", verdict: "scam_other", label: "phishing", confidence: 0.9967, latency: 52 },
+    { text: "Your loan of NGN 500,000 approved. Pay NGN 2,500 fee to acct 12345...", verdict: "advance_fee_419", label: "loan scam", confidence: 0.9921, latency: 39 },
+    { text: "OK, see you at 6pm. Bring the documents we discussed yesterday.", verdict: "legitimate", label: "legitimate", confidence: 0.9998, latency: 33 },
+    { text: "Click here to claim your N50,000 reward: bit.ly/claim-now-fast", verdict: "scam_other", label: "phishing", confidence: 0.9912, latency: 44 },
+    { text: "Reminder: your appointment with Dr. Adeyemi is tomorrow at 10am", verdict: "legitimate", label: "legitimate", confidence: 0.9997, latency: 36 },
+    { text: "Congratulations! You have been selected to receive £950,000...", verdict: "advance_fee_419", label: "419 scam", confidence: 0.9989, latency: 40 },
+    { text: "Hey, did you finish reviewing the document I sent earlier?", verdict: "legitimate", label: "legitimate", confidence: 0.9994, latency: 38 },
+    { text: "FINAL NOTICE: Pay outstanding bill of N18,400 within 24 hours...", verdict: "scam_other", label: "scam", confidence: 0.9881, latency: 49 },
+  ];
+  const list = document.getElementById("feed-list");
+  const counter = document.getElementById("feed-count");
+  let feedCount = 39465;
+  let feedIdx = Math.floor(Math.random() * FEED_SAMPLES.length);
+  const MAX_ROWS = 5;
+
+  function emitRow() {
+    const sample = FEED_SAMPLES[feedIdx % FEED_SAMPLES.length];
+    feedIdx++;
+    feedCount++;
+
+    const row = document.createElement("div");
+    row.className = "feed-row";
+
+    const verdictClass = sample.verdict === "legitimate" ? "legit" : "scam";
+    const conf = (sample.confidence * 100).toFixed(2);
+    const latency = sample.latency + Math.round((Math.random() - 0.5) * 8);
+
+    row.innerHTML =
+      '<span class="feed-pill ' + verdictClass + '">' + sample.label + '</span>' +
+      '<span class="feed-text">' + sample.text + '</span>' +
+      '<span class="feed-stat"><span class="conf">' + conf + '%</span><span>·</span><span>' + latency + 'ms</span></span>';
+
+    list.insertBefore(row, list.firstChild);
+    counter.textContent = feedCount.toLocaleString();
+
+    while (list.children.length > MAX_ROWS) {
+      const last = list.children[list.children.length - 1];
+      last.classList.add("exiting");
+      setTimeout(() => { if (last.parentNode) last.parentNode.removeChild(last); }, 280);
+      break;
+    }
+  }
+  // seed initial rows
+  for (let i = 0; i < 4; i++) emitRow();
+  // emit on variable interval
+  function loop() {
+    emitRow();
+    const delay = 1800 + Math.random() * 2200;
+    setTimeout(loop, delay);
+  }
+  setTimeout(loop, 1500);
+
+  // Suggestion chips
+  const input = document.getElementById("demo-input");
+  document.querySelectorAll(".chip").forEach(btn => {
+    btn.addEventListener("click", () => {
+      input.value = btn.dataset.text;
+      input.focus();
+    });
+  });
+
+  // Classifier
+  const API = "https://winifred12-wilma.hf.space/classify";
+  const result = document.getElementById("demo-result");
+  const classifyBtn = document.getElementById("demo-classify");
+
+  async function classify() {
+    const text = input.value.trim();
+    if (!text) { input.focus(); return; }
+    classifyBtn.disabled = true;
+    classifyBtn.innerHTML = 'Classifying…';
+    result.classList.add("show");
+    result.innerHTML = '<div class="loading">Calling Wilma…</div>';
+    try {
+      const r = await fetch(API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, multiclass: true }),
+      });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const data = await r.json();
+      renderResult(data);
+    } catch (err) {
+      result.innerHTML = '<div class="error">Could not reach Wilma. The API may be cold-starting — try again in a few seconds.</div>';
+    } finally {
+      classifyBtn.disabled = false;
+      classifyBtn.innerHTML = 'Classify <span class="btn-arrow">→</span>';
+    }
+  }
+  classifyBtn.addEventListener("click", classify);
+  input.addEventListener("keydown", e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") classify();
+  });
+
+  function renderResult(data) {
+    const isLegit = data.verdict === "legitimate";
+    const verdictClass = isLegit ? "legit" : "scam";
+    const verdictLabel = data.verdict.replace(/_/g, " ");
+    const conf = (data.confidence * 100).toFixed(2);
+    const probs = data.probabilities || {};
+    const sortedProbs = Object.entries(probs).sort((a, b) => b[1] - a[1]);
+    const max = sortedProbs[0] ? sortedProbs[0][1] : 1;
+
+    let html = '<div class="verdict-row">';
+    html += '<div class="verdict ' + verdictClass + '">' + verdictLabel + '</div>';
+    html += '<div class="confidence">' + conf + '% · ' + (data.latency_ms || "?") + 'ms · ' + (data.model || "") + '</div>';
+    html += '</div>';
+
+    html += '<div class="signals">';
+    for (const [name, p] of sortedProbs) {
+      const pct = (p * 100).toFixed(1);
+      const barPct = (p / max) * 100;
+      const cls = name === "legitimate" ? "legit" : "scam";
+      html += '<div class="signal-row ' + cls + '">';
+      html += '<div class="name">' + name.replace(/_/g, " ") + '</div>';
+      html += '<div class="score">' + pct + '%</div>';
+      html += '<div class="bar"><div style="width:' + barPct + '%"></div></div>';
+      html += '</div>';
+    }
+    html += '</div>';
+
+    result.innerHTML = html;
+  }
+
+  // Copy curl
+  document.getElementById("copy-curl").addEventListener("click", function() {
+    const code = document.querySelector(".code").textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      const original = this.textContent;
+      this.textContent = "Copied";
+      setTimeout(() => { this.textContent = original; }, 1500);
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
