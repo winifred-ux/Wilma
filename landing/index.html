@@ -568,6 +568,7 @@ footer {
   .hero { padding: 80px 24px 24px; }
 }
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -735,6 +736,36 @@ curl -X POST <span class="s">https://winifred12-wilma.hf.space/classify</span> \
 
 <script>
 (function() {
+  // Supabase client for saving classifications when user is signed in
+  const SUPABASE_URL = "https://upapunmvqqwdkqdfckjr.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_sohMwjK8tRBxren6rtbfaQ_1ijB4dcd";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  async function getCurrentUser() {
+    const { data } = await sb.auth.getSession();
+    return data.session ? data.session.user : null;
+  }
+
+  async function saveClassification(text, data) {
+    const user = await getCurrentUser();
+    if (!user) return;
+    try {
+      await sb.from("classifications").insert({
+        user_id: user.id,
+        text: text,
+        verdict: data.verdict,
+        confidence: data.confidence,
+        is_scam: data.is_scam,
+        latency_ms: data.latency_ms,
+        model: data.model,
+        probabilities: data.probabilities
+      });
+    } catch (e) {
+      console.warn("Could not save classification:", e);
+    }
+  }
+
+
   // Theme
   const root = document.documentElement;
   let stored = null;
@@ -850,6 +881,7 @@ curl -X POST <span class="s">https://winifred12-wilma.hf.space/classify</span> \
       if (!r.ok) throw new Error("HTTP " + r.status);
       const data = await r.json();
       renderResult(data);
+      saveClassification(text, data);
     } catch (err) {
       result.innerHTML = '<div class="error">Could not reach Wilma. The API may be cold-starting — try again in a few seconds.</div>';
     } finally {
@@ -904,5 +936,20 @@ curl -X POST <span class="s">https://winifred12-wilma.hf.space/classify</span> \
 })();
 </script>
 
+
+<script>
+  // Auth-aware nav: if signed in, swap "Try it" for "Dashboard"
+  (async function() {
+    if (!window.supabase) return;
+    const SUPABASE_URL = "https://upapunmvqqwdkqdfckjr.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_sohMwjK8tRBxren6rtbfaQ_1ijB4dcd";
+    const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const { data } = await _sb.auth.getSession();
+    if (data.session) {
+      const tryIt = document.querySelector('.nav-link[href="#demo"]');
+      if (tryIt) { tryIt.textContent = "Dashboard"; tryIt.setAttribute("href", "/dashboard.html"); }
+    }
+  })();
+</script>
 </body>
 </html>

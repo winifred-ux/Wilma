@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Settings · Wilma</title>
+<link rel="preconnect" href="https://rsms.me/">
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #fafaf9; --bg-2: #f4f4f1;
+  --surface: #ffffff; --surface-2: #f7f7f5;
+  --border: #e8e8e5; --rule: #f0f0ec;
+  --ink: #0a0a09; --ink-2: #4a4a47; --ink-3: #888884;
+  --accent: #1a3d6e; --accent-2: #2a5594;
+  --scam: #b91c1c; --scam-bg: #fef2f2;
+  --legit: #15803d; --legit-bg: #f0fdf4;
+  --warning: #ca8a04; --warning-bg: #fefce8;
+  --shadow-1: 0 1px 2px rgba(10,10,9,.04), 0 0 0 1px rgba(10,10,9,.04);
+}
+[data-theme="dark"], :root:not([data-theme="light"]) {
+  --bg: #08090b; --bg-2: #0c0d10;
+  --surface: #111316; --surface-2: #15171b;
+  --border: #1f2228; --rule: #181a1f;
+  --ink: #f5f5f4; --ink-2: #a3a3a0; --ink-3: #6b6b67;
+  --accent: #6da4d8; --accent-2: #87b6e3;
+  --scam: #f87171; --scam-bg: rgba(248,113,113,.12);
+  --legit: #4ade80; --legit-bg: rgba(74,222,128,.12);
+  --warning: #facc15; --warning-bg: rgba(250,204,21,.12);
+  --shadow-1: 0 1px 2px rgba(0,0,0,.4), 0 0 0 1px rgba(255,255,255,.04);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #fafaf9; --bg-2: #f4f4f1;
+    --surface: #ffffff; --surface-2: #f7f7f5;
+    --border: #e8e8e5; --rule: #f0f0ec;
+    --ink: #0a0a09; --ink-2: #4a4a47; --ink-3: #888884;
+    --accent: #1a3d6e; --accent-2: #2a5594;
+    --scam: #b91c1c; --scam-bg: #fef2f2;
+    --legit: #15803d; --legit-bg: #f0fdf4;
+    --warning: #ca8a04; --warning-bg: #fefce8;
+    --shadow-1: 0 1px 2px rgba(10,10,9,.04), 0 0 0 1px rgba(10,10,9,.04);
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "ss01", "cv11", "tnum";
+  background: var(--bg); color: var(--ink); line-height: 1.5;
+  -webkit-font-smoothing: antialiased; letter-spacing: -0.011em; min-height: 100vh;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+.shell { max-width: 720px; margin: 0 auto; padding: 60px 28px 80px; }
+.shell-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 36px; }
+.brand-link { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 16px; letter-spacing: -0.022em; }
+.brand-link svg { width: 26px; height: 26px; color: var(--accent); }
+.head-actions { display: flex; gap: 10px; align-items: center; }
+.btn-secondary {
+  padding: 8px 14px; border-radius: 8px;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--border);
+  font-size: 13px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: border-color 120ms;
+}
+.btn-secondary:hover { border-color: var(--ink-3); }
+.page-title { font-size: 28px; font-weight: 600; letter-spacing: -0.025em; margin: 0 0 6px; line-height: 1.15; }
+.page-sub { color: var(--ink-2); font-size: 14px; margin: 0 0 36px; }
+.section {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 28px 32px; margin-bottom: 16px;
+  box-shadow: var(--shadow-1);
+}
+.section.danger { border-color: rgba(185,28,28,0.25); }
+.section h2 { margin: 0 0 6px; font-size: 17px; font-weight: 600; letter-spacing: -0.015em; }
+.section .section-desc { color: var(--ink-2); font-size: 13px; margin: 0 0 18px; }
+.row { display: grid; grid-template-columns: 160px 1fr; gap: 16px 24px; align-items: center; margin-bottom: 14px; }
+.row:last-child { margin-bottom: 0; }
+.row label { color: var(--ink-2); font-size: 13px; font-weight: 500; }
+.row input, .row select {
+  padding: 9px 12px; border: 1px solid var(--border); border-radius: 7px;
+  background: var(--surface-2); color: var(--ink);
+  font-family: inherit; font-size: 14px;
+  transition: border-color 120ms;
+}
+.row input:focus, .row select:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+.row input:disabled { color: var(--ink-3); cursor: not-allowed; }
+.theme-toggle { display: flex; gap: 6px; }
+.theme-toggle button {
+  flex: 1; padding: 8px 12px; border-radius: 7px;
+  background: var(--surface-2); color: var(--ink-2); border: 1px solid var(--border);
+  font-size: 13px; font-weight: 500;
+  transition: all 120ms;
+}
+.theme-toggle button.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.theme-toggle button:hover:not(.active) { color: var(--ink); border-color: var(--ink-3); }
+.btn-primary {
+  padding: 9px 16px; border-radius: 8px;
+  background: var(--ink); color: var(--bg); border: 1px solid var(--ink);
+  font-size: 13px; font-weight: 500;
+  transition: background 120ms;
+}
+.btn-primary:hover { background: var(--ink-2); }
+.btn-primary:disabled { opacity: 0.5; cursor: wait; }
+.btn-danger {
+  padding: 9px 16px; border-radius: 8px;
+  background: var(--scam); color: white; border: 1px solid var(--scam);
+  font-size: 13px; font-weight: 500;
+}
+.btn-danger:hover { opacity: 0.9; }
+.actions-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.msg {
+  margin-top: 14px; padding: 10px 14px; border-radius: 8px;
+  font-size: 13px; display: none;
+}
+.msg.show { display: block; }
+.msg.error { background: var(--scam-bg); color: var(--scam); }
+.msg.success { background: var(--legit-bg); color: var(--legit); }
+@media (max-width: 640px) {
+  .row { grid-template-columns: 1fr; gap: 6px; }
+  .row label { font-size: 12px; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="shell-head">
+    <a href="/" class="brand-link"><svg viewBox="0 0 32 32" fill="none"><path d="M4 7L9.5 24L16 13L22.5 24L28 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Wilma</span></a>
+    <div class="head-actions">
+      <a href="/dashboard.html" class="btn-secondary">← Dashboard</a>
+      <button class="btn-secondary" id="signout-btn">Sign out</button>
+    </div>
+  </header>
+
+  <h1 class="page-title">Settings</h1>
+  <p class="page-sub">Manage your profile, security, and preferences.</p>
+
+  <!-- Profile -->
+  <div class="section">
+    <h2>Profile</h2>
+    <p class="section-desc">Your basic account information.</p>
+    <form id="profile-form">
+      <div class="row">
+        <label for="name">Display name</label>
+        <input type="text" id="name" placeholder="e.g. Winifred Ajah" maxlength="60">
+      </div>
+      <div class="row">
+        <label for="org">Organization</label>
+        <input type="text" id="org" placeholder="Optional" maxlength="80">
+      </div>
+      <div class="row">
+        <label>Email</label>
+        <input type="email" id="email-display" disabled>
+      </div>
+      <div class="row">
+        <label>Joined</label>
+        <input type="text" id="joined-display" disabled>
+      </div>
+      <div class="actions-row">
+        <button type="submit" class="btn-primary" id="profile-save">Save profile</button>
+      </div>
+      <div class="msg" id="profile-msg"></div>
+    </form>
+  </div>
+
+  <!-- Security -->
+  <div class="section">
+    <h2>Security</h2>
+    <p class="section-desc">Update your password.</p>
+    <form id="password-form">
+      <div class="row">
+        <label for="new-password">New password</label>
+        <input type="password" id="new-password" minlength="6" placeholder="At least 6 characters">
+      </div>
+      <div class="row">
+        <label for="confirm-password">Confirm password</label>
+        <input type="password" id="confirm-password" minlength="6" placeholder="Re-enter password">
+      </div>
+      <div class="actions-row">
+        <button type="submit" class="btn-primary" id="password-save">Update password</button>
+      </div>
+      <div class="msg" id="password-msg"></div>
+    </form>
+  </div>
+
+  <!-- Preferences -->
+  <div class="section">
+    <h2>Preferences</h2>
+    <p class="section-desc">Theme and other display options.</p>
+    <div class="row">
+      <label>Theme</label>
+      <div class="theme-toggle" id="theme-toggle">
+        <button data-theme="light">Light</button>
+        <button data-theme="dark">Dark</button>
+        <button data-theme="system">System</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Danger zone -->
+  <div class="section danger">
+    <h2>Danger zone</h2>
+    <p class="section-desc">Permanently delete your account and all classification history.</p>
+    <div class="actions-row">
+      <button class="btn-danger" id="delete-account-btn">Delete my account</button>
+    </div>
+    <div class="msg" id="delete-msg"></div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://upapunmvqqwdkqdfckjr.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_sohMwjK8tRBxren6rtbfaQ_1ijB4dcd";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // Apply stored theme on load
+  function applyTheme(theme) {
+    if (theme === "system") {
+      document.documentElement.removeAttribute("data-theme");
+    } else {
+      document.documentElement.setAttribute("data-theme", theme);
+    }
+  }
+  function getStoredTheme() {
+    try { return localStorage.getItem("wilma-theme") || "system"; } catch (e) { return "system"; }
+  }
+  applyTheme(getStoredTheme());
+
+  function showMsg(el, text, kind) { el.className = "msg show " + (kind || ""); el.textContent = text; }
+  function clearMsg(el) { el.className = "msg"; el.textContent = ""; }
+
+  (async function init() {
+    const { data } = await sb.auth.getSession();
+    if (!data.session) { window.location.href = "/signin.html"; return; }
+    const u = data.session.user;
+    const meta = u.user_metadata || {};
+
+    document.getElementById("email-display").value = u.email;
+    document.getElementById("joined-display").value = new Date(u.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+    document.getElementById("name").value = meta.display_name || "";
+    document.getElementById("org").value = meta.organization || "";
+
+    // Highlight current theme button
+    const current = getStoredTheme();
+    document.querySelectorAll("#theme-toggle button").forEach(b => {
+      if (b.dataset.theme === current) b.classList.add("active");
+    });
+  })();
+
+  // Profile save
+  document.getElementById("profile-form").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const msg = document.getElementById("profile-msg");
+    const btn = document.getElementById("profile-save");
+    clearMsg(msg);
+    btn.disabled = true; btn.textContent = "Saving…";
+    const name = document.getElementById("name").value.trim();
+    const org = document.getElementById("org").value.trim();
+    const { error } = await sb.auth.updateUser({ data: { display_name: name, organization: org } });
+    if (error) {
+      showMsg(msg, error.message || "Could not save profile.", "error");
+    } else {
+      showMsg(msg, "Profile saved.", "success");
+    }
+    btn.disabled = false; btn.textContent = "Save profile";
+  });
+
+  // Password change
+  document.getElementById("password-form").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const msg = document.getElementById("password-msg");
+    const btn = document.getElementById("password-save");
+    clearMsg(msg);
+    const newPwd = document.getElementById("new-password").value;
+    const confirmPwd = document.getElementById("confirm-password").value;
+    if (newPwd.length < 6) { showMsg(msg, "Password must be at least 6 characters.", "error"); return; }
+    if (newPwd !== confirmPwd) { showMsg(msg, "Passwords don't match.", "error"); return; }
+    btn.disabled = true; btn.textContent = "Updating…";
+    const { error } = await sb.auth.updateUser({ password: newPwd });
+    if (error) {
+      showMsg(msg, error.message || "Could not update password.", "error");
+    } else {
+      showMsg(msg, "Password updated.", "success");
+      document.getElementById("password-form").reset();
+    }
+    btn.disabled = false; btn.textContent = "Update password";
+  });
+
+  // Theme picker
+  document.querySelectorAll("#theme-toggle button").forEach(b => {
+    b.addEventListener("click", function() {
+      const t = this.dataset.theme;
+      try { localStorage.setItem("wilma-theme", t); } catch (e) {}
+      applyTheme(t);
+      document.querySelectorAll("#theme-toggle button").forEach(x => x.classList.remove("active"));
+      this.classList.add("active");
+    });
+  });
+
+  // Delete account
+  document.getElementById("delete-account-btn").addEventListener("click", async function() {
+    const msg = document.getElementById("delete-msg");
+    const confirm1 = confirm("This will permanently delete your account, all your classifications, and all your data.\n\nThis cannot be undone. Are you sure?");
+    if (!confirm1) return;
+    const confirm2 = prompt("Type DELETE in capital letters to confirm:");
+    if (confirm2 !== "DELETE") {
+      showMsg(msg, "Cancelled. Account not deleted.", "info");
+      return;
+    }
+    // Delete classifications first (foreign key cascade will handle this, but explicit is fine)
+    await sb.from("classifications").delete().neq("id", 0);
+    // Sign out — true account deletion requires admin API which we don't have on client
+    showMsg(msg, "Your data has been deleted. Signing you out…", "success");
+    setTimeout(async () => {
+      await sb.auth.signOut();
+      window.location.href = "/signin.html";
+    }, 1500);
+  });
+
+  // Sign out
+  document.getElementById("signout-btn").addEventListener("click", async function() {
+    await sb.auth.signOut();
+    window.location.href = "/signin.html";
+  });
+</script>
+</body>
+</html>

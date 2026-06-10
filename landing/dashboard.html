@@ -149,6 +149,40 @@ button { font-family: inherit; cursor: pointer; }
 .auth-msg.error { background: var(--scam-bg); color: var(--scam); }
 .auth-msg.success { background: var(--legit-bg); color: var(--legit); }
 .auth-msg.info { background: var(--warning-bg); color: var(--warning); }
+
+  .hist-row {
+    display: grid; grid-template-columns: 80px 1fr 80px 70px;
+    gap: 12px; align-items: center;
+    padding: 12px 0; border-top: 1px solid var(--rule);
+    font-size: 13px;
+  }
+  .hist-row:first-child { border-top: none; }
+  .hist-pill {
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 500;
+    padding: 3px 8px; border-radius: 6px;
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", monospace;
+  }
+  .hist-pill.legit { background: var(--legit-bg); color: var(--legit); }
+  .hist-pill.scam { background: var(--scam-bg); color: var(--scam); }
+  .hist-text {
+    color: var(--ink);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .hist-conf {
+    font-family: ui-monospace, monospace;
+    color: var(--ink-2); font-size: 12px;
+    text-align: right;
+  }
+  .hist-time {
+    color: var(--ink-3); font-size: 11px;
+    text-align: right;
+  }
+  .hist-empty {
+    color: var(--ink-3); font-size: 13px; font-style: italic;
+    padding: 18px 0; text-align: center;
+  }
+
 </style>
 </head>
 <body>
@@ -177,6 +211,7 @@ button { font-family: inherit; cursor: pointer; }
     <a href="/" class="dash-brand"><svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 7L9.5 24L16 13L22.5 24L28 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Wilma</span></a>
     <div class="dash-actions">
       <a href="/" class="btn-secondary">Home</a>
+      <a href="/settings.html" class="btn-secondary">Settings</a>
       <button class="btn-secondary" id="signout-btn">Sign out</button>
     </div>
   </header>
@@ -194,8 +229,8 @@ button { font-family: inherit; cursor: pointer; }
   </div>
   <div class="dash-card">
     <h2>Classification history</h2>
-    <p>Every message you classify will be saved to your account.</p>
-    <div class="dash-empty">No classifications yet — try one on the home page.</div>
+    <p id="history-summary" style="margin-bottom: 18px;">Loading your history…</p>
+    <div id="history-list"></div>
   </div>
 </div>
 <script>
@@ -212,11 +247,52 @@ button { font-family: inherit; cursor: pointer; }
     const { data } = await sb.auth.getSession();
     if (!data.session) { window.location.href = "/signin.html"; return; }
     const u = data.session.user;
-    document.getElementById("welcome-title").textContent = "Hi, " + u.email.split("@")[0];
+    const displayName = (u.user_metadata && u.user_metadata.display_name) ? u.user_metadata.display_name.split(" ")[0] : u.email.split("@")[0];
+    document.getElementById("welcome-title").textContent = "Hi, " + displayName + " 👋";
     document.getElementById("welcome-text").textContent = "You're signed in. Wilma will start saving every classification you run on this account.";
     document.getElementById("meta-email").textContent = u.email;
     document.getElementById("meta-id").textContent = u.id;
     document.getElementById("meta-joined").textContent = new Date(u.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+
+    // Load classification history
+    const { data: rows, error: histErr } = await sb
+      .from("classifications")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    const summary = document.getElementById("history-summary");
+    const list = document.getElementById("history-list");
+    if (histErr) {
+      summary.textContent = "Could not load history.";
+      console.warn("History error:", histErr);
+      return;
+    }
+    if (!rows || rows.length === 0) {
+      summary.textContent = "Every message you classify will be saved to your account.";
+      list.innerHTML = '<div class="hist-empty">No classifications yet — try one on the home page.</div>';
+      return;
+    }
+
+    const total = rows.length;
+    const scams = rows.filter(r => r.is_scam).length;
+    summary.textContent = "Your last " + total + " classifications (" + scams + " flagged as scam):";
+
+    list.innerHTML = rows.map(r => {
+      const cls = r.is_scam ? "scam" : "legit";
+      const verdict = (r.verdict || "").replace(/_/g, " ");
+      const conf = (r.confidence * 100).toFixed(1) + "%";
+      const text = r.text.length > 80 ? r.text.slice(0, 80) + "…" : r.text;
+      const when = new Date(r.created_at);
+      const time = when.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + ", " +
+                   when.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+      return '<div class="hist-row">' +
+        '<span class="hist-pill ' + cls + '">' + verdict + '</span>' +
+        '<span class="hist-text">' + text.replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])) + '</span>' +
+        '<span class="hist-conf">' + conf + '</span>' +
+        '<span class="hist-time">' + time + '</span>' +
+      '</div>';
+    }).join("");
   })();
 
   document.getElementById("signout-btn").addEventListener("click", async function() {
