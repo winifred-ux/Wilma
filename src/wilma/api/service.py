@@ -15,6 +15,8 @@ Then visit:
 """
 
 from __future__ import annotations
+import httpx
+
 
 import os
 import time
@@ -23,7 +25,7 @@ from pathlib import Path
 from typing import Optional
 
 import torch
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
@@ -211,6 +213,90 @@ def _bundle_for(multiclass: bool) -> ModelBundle:
 # Routes
 # ---------------------------------------------------------------------------
 
+
+# --- API key validation ---
+SUPABASE_URL_FOR_AUTH = os.environ.get("SUPABASE_URL", "")
+SUPABASE_SERVICE_KEY_FOR_AUTH = os.environ.get("SUPABASE_SERVICE_KEY", "")
+
+
+async def verify_api_key_optional(authorization: Optional[str] = Header(default=None)):
+    """
+    Optional API key validation.
+    - No Authorization header: anonymous access allowed (for landing page demo)
+    - Bearer token present: must be a valid, non-revoked Wilma API key
+    """
+    if not authorization:
+        return None  # Anonymous access allowed
+
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid Authorization header. Use 'Bearer YOUR_API_KEY'."
+        )
+
+    key = authorization[7:].strip()
+
+    if not key.startswith("wlm_"):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid API key format. Wilma keys start with 'wlm_'."
+        )
+
+    if not SUPABASE_URL_FOR_AUTH or not SUPABASE_SERVICE_KEY_FOR_AUTH:
+        raise HTTPException(
+            status_code=500,
+            detail="Server is not configured for API key validation."
+        )
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"{SUPABASE_URL_FOR_AUTH}/rest/v1/api_keys",
+                params={
+                    "key_full": f"eq.{key}",
+                    "revoked_at": "is.null",
+                    "select": "id,user_id,name",
+                    "limit": "1",
+                },
+                headers={
+                    "apikey": SUPABASE_SERVICE_KEY_FOR_AUTH,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_KEY_FOR_AUTH}",
+                },
+            )
+    except httpx.RequestError:
+        raise HTTPException(
+            status_code=503,
+            detail="Could not validate API key (auth service unreachable)."
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail="Could not validate API key.")
+
+    keys = response.json()
+    if not keys:
+        raise HTTPException(status_code=401, detail="Invalid or revoked API key.")
+
+    key_data = keys[0]
+
+    # Best-effort: update last_used_at (don't fail request if this fails)
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            await client.patch(
+                f"{SUPABASE_URL_FOR_AUTH}/rest/v1/api_keys",
+                params={"id": f"eq.{key_data['id']}"},
+                json={"last_used_at": "now()"},
+                headers={
+                    "apikey": SUPABASE_SERVICE_KEY_FOR_AUTH,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_KEY_FOR_AUTH}",
+                    "Content-Type": "application/json",
+                },
+            )
+    except Exception:
+        pass
+
+    return key_data
+
+
 @app.get("/", tags=["meta"])
 def root() -> dict:
     return {
@@ -234,13 +320,13 @@ def health() -> HealthResponse:
 
 
 @app.post("/classify", response_model=ClassifyResponse, tags=["inference"])
-def classify(req: ClassifyRequest) -> ClassifyResponse:
+def classify(req: ClassifyRequest, key_info=Depends(verify_api_key_optional)) -> ClassifyResponse:
     bundle = _bundle_for(req.multiclass)
     return _classify_single(req.text, bundle)
 
 
 @app.post("/classify/batch", response_model=BatchClassifyResponse, tags=["inference"])
-def classify_batch(req: BatchClassifyRequest) -> BatchClassifyResponse:
+def classify_batch(req: BatchClassifyRequest, key_info=Depends(verify_api_key_optional)) -> BatchClassifyResponse:
     bundle = _bundle_for(req.multiclass)
     started = time.perf_counter()
     results = [_classify_single(text, bundle) for text in req.texts]
