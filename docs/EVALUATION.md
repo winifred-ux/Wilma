@@ -119,3 +119,88 @@ python3 scripts/eval_nigerian_sms.py
 ```
 
 Test set lives at `data/eval/nigerian_sms.csv`.
+---
+
+## Length experiment: why the Nigerian SMS numbers are what they are
+
+**Date:** September 2026
+**Script:** `scripts/length_experiment.py`
+**Data:** `data/eval/length_experiment.csv`
+
+### Design
+
+Eight known scam types were written three times each: a short SMS-length
+version, a medium version, and a long formal version. The fraudulent
+content is identical across all three variants. Only length and register
+change. If the model were reading fraud semantics, detection should be
+roughly flat across variants. If it were reading document shape, detection
+should climb with length.
+
+The eight scams: promo-draw winnings, BVN blocking, 419 barrister
+inheritance, family-impersonation ("hi mum"), forex investment returns,
+customs clearance fee, work-from-home recruitment, and OTP harvesting.
+
+### Result
+
+| Variant | Mean length | Detected | Mean confidence |
+|---|---|---|---|
+| short  | 60 chars  | 0/8 (0%)  | 0.981 |
+| medium | 167 chars | 4/8 (50%) | 0.999 |
+| long   | 932 chars | 7/8 (88%) | 0.996 |
+
+Detection rises from 0% to 88% purely as a function of length, with the
+fraudulent content held constant.
+
+Representative case, the OTP harvesting scam:
+
+- 62 chars: `legitimate` at 0.883
+- 184 chars: `scam` at 0.998
+- 966 chars: `scam` at 1.000
+
+And the 419 barrister letter, the most recognisable scam format in the
+country:
+
+- short: `legitimate` at 1.000
+- medium: `legitimate` at 1.000
+- long: `scam` at 1.000
+
+### Interpretation
+
+This confirms distribution shift and identifies its mechanism precisely.
+The training corpora (Enron, SpamAssassin, Kaggle fraud) are long-form
+English email. The model learned that long, formal, letter-shaped
+documents are fraudulent and that short informal text is not. It is
+classifying document shape, not fraud.
+
+This explains the gap between 99.24% accuracy on the held-out test set and
+80.00% on Nigerian SMS. Both numbers are correct. The test set resembles
+the training data; Nigerian SMS does not.
+
+### Commercial consequence
+
+Nigerian fraud arrives predominantly by SMS and WhatsApp, and those
+messages are short. The model scores 0% in exactly the regime the product
+is intended to serve. The headline accuracy figure is real but does not
+describe performance on the target use case.
+
+The confidence score is worse than uncalibrated. It returned 1.000
+`legitimate` on eight live scams. It cannot currently be used as a
+decision threshold by any customer.
+
+### What this changes
+
+The fix is now specific rather than general. The model does not need more
+data, it needs short data. Priorities in order:
+
+1. Fine tune on short-message corpora, not email corpora.
+2. Collect several hundred real Nigerian SMS from actual phones, scam and
+   legitimate, preserving original length and register.
+3. Hold transactional formats (OTP alerts, debit alerts, recharge
+   confirmations) out as an explicit negative class, since these are the
+   highest-cost false positives for a bank.
+4. Re-run this length experiment after fine tuning. Flat detection across
+   the three variants is the pass condition.
+5. Recalibrate confidence and re-evaluate before quoting any threshold to
+   a customer.
+
+Until item 4 passes, Wilma should not be sold as an SMS fraud detector.
