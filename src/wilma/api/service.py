@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Optional
 
 import torch
-from fastapi import FastAPI, HTTPException, Depends, Header
+from fastapi import FastAPI, HTTPException, Depends, Header, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
@@ -407,19 +407,149 @@ def health() -> HealthResponse:
 
 
 @app.post("/classify", response_model=ClassifyResponse, tags=["inference"])
-def classify(req: ClassifyRequest, key_info=Depends(verify_api_key_optional)) -> ClassifyResponse:
+def classify(
+    req: ClassifyRequest,
+    background: BackgroundTasks,
+    key_info=Depends(verify_api_key_optional),
+) -> ClassifyResponse:
     bundle = _bundle_for(req.multiclass)
-    return _classify_single(req.text, bundle)
+    result = _classify_single(req.text, bundle)
+
+    if key_info:
+        background.add_task(
+            _record_usage,
+            key_info["id"],
+            key_info.get("user_id"),
+            "/classify",
+            1,
+        )
+
+    return result
 
 
 @app.post("/classify/batch", response_model=BatchClassifyResponse, tags=["inference"])
-def classify_batch(req: BatchClassifyRequest, key_info=Depends(verify_api_key_optional)) -> BatchClassifyResponse:
+def classify_batch(
+    req: BatchClassifyRequest,
+    background: BackgroundTasks,
+    key_info=Depends(verify_api_key_optional),
+) -> BatchClassifyResponse:
     bundle = _bundle_for(req.multiclass)
     started = time.perf_counter()
     results = [_classify_single(text, bundle) for text in req.texts]
     total = (time.perf_counter() - started) * 1000.0
+
+    if key_info:
+        background.add_task(
+            _record_usage,
+            key_info["id"],
+            key_info.get("user_id"),
+            "/classify/batch",
+            len(req.texts),
+        )
+
     return BatchClassifyResponse(
         results=results,
         total_latency_ms=round(total, 2),
         count=len(results),
+    )
+
+    # ---------------------------------------------------------------------------
+# Usage metering
+#
+# Records that a call happened, from which key, to which endpoint, and how
+# many messages it carried. Message content is never stored.
+# ---------------------------------------------------------------------------
+
+from datetime import datetime, timedelta, timezone
+
+
+async def _record_usage(
+    api_key_id: str,
+    user_id: Optional[str],
+    endpoint: str,
+    message_count: int,
+) -> None:
+    """Best effort usage write. Never raises into the request path."""
+    if not SUPABASE_URL_FOR_AUTH or not SUPABASE_SERVICE_KEY_FOR_AUTH:
+        return
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            await client.post(
+                f"{SUPABASE_URL_FOR_AUTH}/rest/v1/usage_events",
+                json={
+                    "api_key_id": str(api_key_id),
+                    "user_id": str(user_id) if user_id else None,
+                    "endpoint": endpoint,
+                    "message_count": message_count,
+                },
+                headers={
+                    "apikey": SUPABASE_SERVICE_KEY_FOR_AUTH,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_KEY_FOR_AUTH}",
+                    "Content-Type": "application/json",
+                    "Prefer": "return=minimal",
+                },
+            )
+    except Exception:
+        pass
+
+
+async def verify_api_key_required(key_info=Depends(verify_api_key_optional)):
+    """Same as the optional check, but anonymous callers are rejected."""
+    if key_info is None:
+        raise HTTPException(
+            status_code=401,
+            detail="An API key is required for this endpoint. Use 'Bearer YOUR_API_KEY'.",
+        )
+    return key_info
+
+
+class UsageResponse(BaseModel):
+    period_days: int
+    total_requests: int
+    total_messages: int
+    by_endpoint: dict[str, int]
+
+
+@app.get("/usage", response_model=UsageResponse, tags=["meta"])
+async def usage(days: int = 30, key_info=Depends(verify_api_key_required)) -> UsageResponse:
+    """Return this API key's own usage over the last N days."""
+    days = max(1, min(days, 365))
+    since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"{SUPABASE_URL_FOR_AUTH}/rest/v1/usage_events",
+                params={
+                    "api_key_id": f"eq.{key_info['id']}",
+                    "created_at": f"gte.{since}",
+                    "select": "endpoint,message_count",
+                },
+                headers={
+                    "apikey": SUPABASE_SERVICE_KEY_FOR_AUTH,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_KEY_FOR_AUTH}",
+                },
+            )
+    except httpx.RequestError:
+        raise HTTPException(status_code=503, detail="Usage service unreachable.")
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail="Could not read usage.")
+
+    rows = response.json()
+    by_endpoint: dict[str, int] = {}
+    total_messages = 0
+
+    for row in rows:
+        endpoint = row.get("endpoint", "unknown")
+        count = int(row.get("message_count") or 0)
+        by_endpoint[endpoint] = by_endpoint.get(endpoint, 0) + count
+        total_messages += count
+
+    return UsageResponse(
+        period_days=days,
+        total_requests=len(rows),
+        total_messages=total_messages,
+        by_endpoint=by_endpoint,
     )
