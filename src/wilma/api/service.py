@@ -164,6 +164,93 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+# ---------------------------------------------------------------------------
+# Rate limiting
+#
+# In-memory sliding window. Buckets by API key when one is supplied,
+# otherwise by client IP. Anonymous callers get a small allowance so the
+# public demo cannot be hammered; keyed clients get a production allowance.
+#
+# Known limit: state lives in this process, so it resets on restart and
+# would not hold across multiple replicas. Redis would be the fix if this
+# ever scales beyond one container.
+# ---------------------------------------------------------------------------
+
+from collections import defaultdict, deque
+
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+RATE_LIMIT_WINDOW_SECONDS = 60
+RATE_LIMIT_ANONYMOUS = 30
+RATE_LIMIT_WITH_KEY = 300
+RATE_LIMIT_EXEMPT_PATHS = {"/", "/health", "/docs", "/openapi.json", "/redoc"}
+
+_request_log: dict[str, deque] = defaultdict(deque)
+_last_sweep = time.time()
+
+
+def _rate_limit_identity(request: Request) -> tuple[str, int]:
+    """Return the bucket name for this caller and how many calls it may make."""
+    auth = request.headers.get("authorization", "")
+    if auth.lower().startswith("bearer "):
+        token = auth[7:].strip()
+        if token:
+            return f"key:{token[:12]}", RATE_LIMIT_WITH_KEY
+
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        client = forwarded.split(",")[0].strip()
+    else:
+        client = request.client.host if request.client else "unknown"
+    return f"ip:{client}", RATE_LIMIT_ANONYMOUS
+
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    global _last_sweep
+
+    if request.url.path in RATE_LIMIT_EXEMPT_PATHS:
+        return await call_next(request)
+
+    bucket, allowance = _rate_limit_identity(request)
+    now = time.time()
+    hits = _request_log[bucket]
+
+    # Drop anything that has fallen out of the window.
+    while hits and now - hits[0] > RATE_LIMIT_WINDOW_SECONDS:
+        hits.popleft()
+
+    if len(hits) >= allowance:
+        retry_after = int(RATE_LIMIT_WINDOW_SECONDS - (now - hits[0])) + 1
+        return JSONResponse(
+            status_code=429,
+            content={
+                "detail": "Rate limit exceeded.",
+                "limit": allowance,
+                "window_seconds": RATE_LIMIT_WINDOW_SECONDS,
+                "retry_after_seconds": retry_after,
+            },
+            headers={"Retry-After": str(retry_after)},
+        )
+
+    hits.append(now)
+
+    # Occasionally clear out buckets nobody is using, so the dict cannot
+    # grow without bound as new IPs arrive.
+    if now - _last_sweep > 300:
+        for key in list(_request_log.keys()):
+            queue = _request_log[key]
+            while queue and now - queue[0] > RATE_LIMIT_WINDOW_SECONDS:
+                queue.popleft()
+            if not queue:
+                del _request_log[key]
+        _last_sweep = now
+
+    response = await call_next(request)
+    response.headers["X-RateLimit-Limit"] = str(allowance)
+    response.headers["X-RateLimit-Remaining"] = str(max(0, allowance - len(hits)))
+    return response
 
 
 # ---------------------------------------------------------------------------
