@@ -25,6 +25,12 @@ Nigerian advance-fee fraud patterns.
 | **DistilBERT (binary)** | **0.9921** | 99.24% | Production model |
 | **DistilBERT (4-class)** | **0.9761 macro** | 98.22% | Categorizes scam type |
 
+> **On Nigerian SMS the binary model scores 80.0% accuracy and 75% recall.**
+> The figures above are measured on held out data from the same public corpora
+> the model was trained on. The SMS figure is measured on short Nigerian
+> messages, which is the intended use. The gap, the failure analysis and what
+> is being done about it are in [docs/EVALUATION.md](docs/EVALUATION.md).
+
 ## Endpoints
 
 - `POST /classify` — single message
