@@ -1,0 +1,4 @@
+id,text,label,subtype,source,received,notes
+m0001,"Your OTP is <CODE>. Do not share with anyone. Valid for 5 minutes.",legitimate,otp,own_phone,2026-08-14,
+m0002,"Congratulations! Your line won 2M in our promo. Send your acct details to claim.",scam,promo_win,own_phone,2026-07-02,
+m0003,"Acct <ACCT> Debit NGN5,000.00 Desc:POS/SHOPRITE Bal:NGN12,430.11",legitimate,debit_alert,own_phone,2026-08-14,
