@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wilma — SMS fraud detection for Nigerian banks and fintechs</title>
+<meta name="description" content="Wilma screens SMS for fraud using two fine tuned models that must agree before anything is blocked. Built for Nigerian banks and fintechs, where a blocked OTP costs more than a missed scam.">
+<link rel="canonical" href="https://winifred12-wilma.hf.space/">
+<meta name="theme-color" content="#0e9384">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://winifred12-wilma.hf.space/">
+<meta property="og:site_name" content="Wilma">
+<meta property="og:title" content="Wilma — SMS fraud detection for Nigerian banks and fintechs">
+<meta property="og:description" content="Two models must agree before a message is blocked. Where they disagree, a human decides. Built in Lagos, measured honestly.">
+<meta property="og:image" content="https://winifred12-wilma.hf.space/favicon.svg">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Wilma — SMS fraud detection for Nigerian banks and fintechs">
+<meta name="twitter:description" content="Two models must agree before a message is blocked. Where they disagree, a human decides.">
+<link rel="stylesheet" href="/wilma.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="backdrop" aria-hidden="true"></div>
+
+<header class="site-head">
+  <div class="wrap head-row">
+    <a class="logo" href="/">
+      <svg width="26" height="26" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+        <rect width="64" height="64" rx="14" fill="#0e9384"/>
+        <path d="M16 22l6 20 10-26 10 26 6-20" fill="none" stroke="#fff"
+              stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Wilma
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="#demo">Try it</a>
+      <a href="#evidence" class="hide-sm">Evidence</a>
+      <a href="#developers" class="hide-sm">Developers</a>
+      <a href="#faq" class="hide-sm">FAQ</a>
+      <a class="btn" href="#contact">Request access</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="wrap">
+  <p class="eyebrow">Fraud detection API</p>
+  <h1>Two models have to agree<br>before we block anything.</h1>
+  <p class="lede" style="margin-top:1.1rem">
+    Wilma reads an SMS and returns one of three answers: block, review, or pass.
+    Built for Nigerian banks and fintechs, where wrongly blocking a customer's
+    OTP costs more than missing a scam.
+  </p>
+  <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1.75rem">
+    <a class="btn" href="#demo">Test a message</a>
+    <a class="btn btn-ghost" href="/docs">Read the API reference</a>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="wrap" id="demo">
+  <p class="eyebrow">Try it</p>
+  <h2>Paste a message</h2>
+  <p class="muted" style="max-width:60ch;margin-top:.6rem">
+    Nothing you type here is stored. Try one of the examples if you would rather
+    not think of one.
+  </p>
+
+  <form id="form" style="margin-top:1.5rem" novalidate>
+    <label for="msg" class="small" style="display:block;margin-bottom:.5rem">
+      Message text
+    </label>
+    <textarea id="msg" name="msg" required
+      placeholder="Your OTP is 483920. Do not share it with anyone."
+      aria-describedby="hint"></textarea>
+    <p id="hint" class="small" style="margin:.5rem 0 0">
+      Press Cmd or Ctrl and Enter to submit.
+    </p>
+    <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;margin-top:1rem">
+      <button class="btn" type="submit" id="go">Check message</button>
+      <span class="small" id="status" role="status" aria-live="polite"></span>
+    </div>
+  </form>
+
+  <ul class="chips" id="chips" aria-label="Example messages"></ul>
+
+  <div id="result" hidden style="margin-top:1.75rem" aria-live="polite">
+    <div class="verdict" id="verdict" data-state="pass">
+      <svg class="vmark" id="vmark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"></svg>
+      <div>
+        <p class="vname" id="vname"></p>
+        <p class="vwhy" id="vwhy"></p>
+      </div>
+    </div>
+    <div class="grid grid-2" style="margin-top:.85rem" id="opinions"></div>
+    <p class="small" id="meta" style="margin-top:.85rem"></p>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="wrap reveal">
+  <p class="eyebrow">How it decides</p>
+  <h2>Three answers, not two</h2>
+  <div class="grid grid-3" style="margin-top:1.5rem">
+    <article class="card">
+      <h3 style="color:var(--block)">Block</h3>
+      <p class="muted" style="margin:.4rem 0 0">
+        Both models flag it. This is the high precision path. On our Nigerian
+        test set it produced two false alarms in forty messages.
+      </p>
+    </article>
+    <article class="card">
+      <h3 style="color:var(--review)">Review</h3>
+      <p class="muted" style="margin:.4rem 0 0">
+        The models disagree. Instead of guessing, the message goes to a human
+        queue. This is where most real fraud in our testing was caught.
+      </p>
+    </article>
+    <article class="card">
+      <h3 style="color:var(--pass)">Pass</h3>
+      <p class="muted" style="margin:.4rem 0 0">
+        Neither model sees fraud. Deliver normally.
+      </p>
+    </article>
+  </div>
+  <p class="muted" style="margin-top:1.25rem;max-width:68ch">
+    The two models were trained on different data and fail on different
+    messages. One knows long form advance fee letters and Nigerian prize
+    language. The other knows short credential harvesting. Between them they
+    flagged every scam in our Nigerian test set. Where they disagree, a person
+    decides rather than a probability.
+  </p>
+</section>
+
+<hr class="rule">
+
+<section class="wrap reveal" id="evidence">
+  <p class="eyebrow">Evidence</p>
+  <h2>Measured, including where it fails</h2>
+  <div class="scroll" style="margin-top:1.4rem">
+    <table>
+      <caption>Evaluated September 2026. The Nigerian set is 40 real-world messages.</caption>
+      <thead>
+        <tr><th scope="col">Test</th><th scope="col">What it measures</th><th scope="col">Result</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">Held out test set</th><td>Data drawn like the training data</td><td class="num">98.1%</td></tr>
+        <tr><th scope="row">Nigerian SMS set</th><td>Real Nigerian scams and real bank alerts</td><td class="num">80.0%</td></tr>
+        <tr><th scope="row">Scams flagged</th><td>Recall across both models on that set</td><td class="num">20 of 20</td></tr>
+        <tr><th scope="row">Length experiment</th><td>One scam written short, medium, long</td><td class="num">75 / 88 / 88%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout" style="margin-top:1.6rem">
+    <p style="margin:0 0 .8rem"><strong>The number we do not lead with.</strong></p>
+    <p style="margin:0 0 .8rem">
+      An earlier version scored 99.24% on public corpora and 80% on Nigerian
+      SMS. Written short, it caught zero scams out of eight. It had learned the
+      shape of long American email rather than fraud itself.
+    </p>
+    <p style="margin:0">
+      Retraining on short message data fixed that. The honest remaining weakness
+      is false alarms on ordinary transactional messages, which is what our
+      current data collection is for. We would rather tell you this than have
+      you discover it in production.
+    </p>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="wrap reveal" id="developers">
+  <p class="eyebrow">Developers</p>
+  <h2>One POST, JSON in, verdict out</h2>
+  <pre><code>curl -X POST https://winifred12-wilma.hf.space/verdict \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{"text": "Your OTP is 483920. Do not share it with anyone."}'</code></pre>
+  <p class="muted" style="margin-top:1rem;max-width:62ch">
+    Full interactive reference at <a href="/docs">/docs</a>. Rate limits,
+    usage metering and batch classification are all documented there.
+    Message content is never stored. We keep an API key id, the endpoint
+    called, a message count and a timestamp, and nothing else.
+  </p>
+</section>
+
+<hr class="rule">
+
+<section class="wrap narrow reveal" id="faq">
+  <p class="eyebrow">Questions</p>
+  <h2>What people ask first</h2>
+  <div style="margin-top:1.25rem">
+    <details>
+      <summary>How accurate is it, really?</summary>
+      <p>80% on our 40-message Nigerian evaluation set, and 98.1% on a held out
+      test set drawn from the same distribution as the training data. The second
+      number is the less meaningful one and we say so. The evaluation set is
+      small, so treat every figure here as directional until we publish results
+      on several hundred messages.</p>
+    </details>
+    <details>
+      <summary>What happens when it is wrong?</summary>
+      <p>Two ways. A missed scam reaches the customer, which is the failure
+      every fraud system has. A false alarm blocks something legitimate, which
+      for a bank is usually worse, because a customer who cannot receive an OTP
+      cannot transact. That is why blocking requires both models to agree and
+      everything uncertain becomes a review rather than a block.</p>
+    </details>
+    <details>
+      <summary>What do you do with our customers' messages?</summary>
+      <p>Nothing. Message text is processed in memory to produce a verdict and
+      is never written to storage. What we record is the API key id, the
+      endpoint, a message count and a timestamp, so that usage can be billed.
+      See the <a href="/privacy.html">privacy policy</a>.</p>
+    </details>
+    <details>
+      <summary>What does it cost?</summary>
+      <p>Pricing is not published yet. Wilma is in pilot and we are working with
+      a small number of Nigerian fintechs at no cost while the Nigerian
+      evaluation set grows. Get in touch and we will be straight with you about
+      what stage it is at.</p>
+    </details>
+    <details>
+      <summary>How long does integration take?</summary>
+      <p>One HTTP POST with a bearer token. A developer can have it screening
+      messages in an afternoon. Batch classification takes up to 50 messages per
+      request.</p>
+    </details>
+    <details>
+      <summary>Who built this?</summary>
+      <p>Wilma is built in Lagos. The models, the evaluation method and the API
+      are all original work, and the evaluation notes including the failures are
+      part of the repository rather than hidden.</p>
+    </details>
+  </div>
+</section>
+
+<hr class="rule">
+
+<section class="wrap narrow reveal" id="contact">
+  <p class="eyebrow">Next step</p>
+  <h2>Run it against your own messages</h2>
+  <p class="muted" style="margin-top:.8rem">
+    The most useful thing you can do is send us fifty of your own SMS, scam and
+    legitimate, and see how Wilma scores them. That tells you more than any
+    number on this page. We will send back the results either way, including
+    the ones it gets wrong.
+  </p>
+  <p style="margin-top:1.5rem">
+    <a class="btn" href="mailto:winifrednwanyibuife@gmail.com?subject=Wilma%20pilot%20access">
+      Request pilot access
+    </a>
+  </p>
+  <p class="small" style="margin-top:.8rem">
+    Or reply with a message you want tested and we will run it for you.
+  </p>
+</section>
+
+</main>
+
+<footer class="site-foot">
+  <div class="wrap foot-row">
+    <p style="margin:0">Wilma · Made in Lagos</p>
+    <nav aria-label="Footer">
+      <a href="/privacy.html">Privacy</a>
+      <a href="/terms.html">Terms</a>
+      <a href="/docs">API reference</a>
+    </nav>
+  </div>
+  <div class="wrap" style="margin-top:1.25rem">
+    <p class="small" style="margin:0;max-width:70ch">
+      Smishing training data from the Smishtank IMC25 dataset, used under
+      CC BY 4.0.
+    </p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  var EXAMPLES = [
+    ["Real OTP", "Your OTP is 483920. Do not share it with anyone."],
+    ["Promo scam", "CONGRATULATIONS! You have won N2,000,000 in our promo. Send your account details to claim."],
+    ["419 letter", "Good day, I am a barrister with an inheritance of $4.5 million to transfer. You share a surname with my late client."],
+    ["Real debit alert", "Debit alert: NGN5,000.00 to SHOPRITE LEKKI. Bal: NGN42,310.55"],
+    ["NIN threat", "NIN update required. Failure to update within 24hrs will lead to SIM blockage. Click to update."],
+    ["Loan bait", "Loan approved! N300,000 ready for disbursement. Send your BVN and card details."]
+  ];
+
+  var MARKS = {
+    block: '<path d="M12 3 2 21h20L12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10v4M12 17.5v.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+    review: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8v5M12 16.5v.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+    pass: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="m8 12.5 2.5 2.5L16 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+  };
+
+  var $ = function(id){ return document.getElementById(id); };
+
+  // Example chips
+  var chips = $("chips");
+  EXAMPLES.forEach(function(pair){
+    var li = document.createElement("li");
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip";
+    b.textContent = pair[0];
+    b.addEventListener("click", function(){
+      $("msg").value = pair[1];
+      $("msg").focus();
+      check();
+    });
+    li.appendChild(b);
+    chips.appendChild(li);
+  });
+
+  function check(){
+    var text = $("msg").value.trim();
+    if(!text){
+      $("status").textContent = "Type or choose a message first.";
+      $("msg").focus();
+      return;
+    }
+    $("go").disabled = true;
+    $("status").textContent = "Checking…";
+
+    fetch("/verdict", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({text: text})
+    }).then(function(r){
+      if(!r.ok) throw new Error("the service returned " + r.status);
+      return r.json();
+    }).then(function(d){
+      render(d);
+      $("status").textContent = "";
+    }).catch(function(e){
+      $("result").hidden = true;
+      $("status").textContent = "Could not check that message: " + e.message;
+    }).then(function(){
+      $("go").disabled = false;
+    });
+  }
+
+  function render(d){
+    var box = $("result");
+    box.hidden = false;
+
+    $("verdict").setAttribute("data-state", d.verdict);
+    $("vmark").innerHTML = MARKS[d.verdict] || MARKS.pass;
+    $("vname").textContent =
+      d.verdict === "block" ? "Block" :
+      d.verdict === "review" ? "Send to review" : "Pass";
+    $("vwhy").textContent = d.action;
+
+    var wrap = $("opinions");
+    wrap.innerHTML = "";
+    d.models.forEach(function(m){
+      var pct = Math.round(m.scam_probability * 1000) / 10;
+      var el = document.createElement("div");
+      el.className = "opinion";
+      var colour = m.is_scam ? "var(--block)" : "var(--pass)";
+      el.innerHTML =
+        '<span class="who">' + m.model_id + '</span>' +
+        '<span class="said" style="color:' + colour + '">' +
+          (m.is_scam ? "scam" : "legitimate") + ' · ' + pct + '%</span>' +
+        '<span class="meter"><i style="background:' + colour + '"></i></span>';
+      wrap.appendChild(el);
+      requestAnimationFrame(function(){
+        el.querySelector(".meter > i").style.width = pct + "%";
+      });
+    });
+
+    $("meta").textContent =
+      "Models agreed: " + d.agreement + " · answered in " +
+      Math.round(d.latency_ms) + " ms";
+  }
+
+  $("form").addEventListener("submit", function(e){ e.preventDefault(); check(); });
+  $("msg").addEventListener("keydown", function(e){
+    if((e.metaKey || e.ctrlKey) && e.key === "Enter"){ e.preventDefault(); check(); }
+  });
+
+  // Reveal on scroll, skipped entirely when reduced motion is requested
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var items = document.querySelectorAll(".reveal");
+  if(reduce || !("IntersectionObserver" in window)){
+    items.forEach(function(el){ el.classList.add("in"); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); }
+      });
+    }, {rootMargin: "0px 0px -12% 0px"});
+    items.forEach(function(el){ io.observe(el); });
+  }
+})();
+</script>
+</body>
+</html>

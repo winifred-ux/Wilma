@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy policy — Wilma</title>
+<meta name="description" content="How Wilma handles data under the Nigeria Data Protection Act. Message content is never stored.">
+<link rel="canonical" href="https://winifred12-wilma.hf.space/privacy.html">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="robots" content="index,follow">
+<link rel="stylesheet" href="/wilma.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="backdrop" aria-hidden="true"></div>
+
+<header class="site-head">
+  <div class="wrap head-row">
+    <a class="logo" href="/">
+      <svg width="26" height="26" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+        <rect width="64" height="64" rx="14" fill="#0e9384"/>
+        <path d="M16 22l6 20 10-26 10 26 6-20" fill="none" stroke="#fff"
+              stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Wilma
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="/">Home</a>
+      <a href="/terms.html">Terms</a>
+      <a href="/docs">API</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="wrap narrow">
+<section>
+  <p class="eyebrow">Legal</p>
+  <h1 style="font-size:clamp(1.9rem,1.5rem + 1.6vw,2.6rem)">Privacy policy</h1>
+  <p class="small">Last updated 11 September 2026.</p>
+
+  <div class="callout" style="margin:1.5rem 0 2rem">
+    This policy is written to be accurate about what the service actually does.
+    It has not yet been reviewed by a lawyer. Before Wilma takes paying
+    customers it should be.
+  </div>
+
+  <h2 style="font-size:1.25rem;margin-top:2rem">Who we are</h2>
+  <p class="muted">Wilma is a fraud detection API operated from Lagos, Nigeria.
+  For questions about this policy or about data we hold, contact
+  <a href="mailto:winifrednwanyibuife@gmail.com">winifrednwanyibuife@gmail.com</a>.</p>
+
+  <h2 style="font-size:1.25rem;margin-top:2rem">The short version</h2>
+  <p class="muted">We do not store the messages you send us. They are processed
+  in memory to produce a verdict and then discarded. We keep a record that a
+  request happened, so that usage can be counted, and nothing about what the
+  message said.</p>
+
+  <h2 style="font-size:1.25rem;margin-top:2rem">What we process</h2>
+  <p class="muted"><strong>Message content.</strong> When you call the
+  classification endpoints, the message text is held in memory only for as long
+  as it takes to return a verdict. It is not written to any database, log or
+  file, and it is not used to train models.</p>
+  <p class="muted"><strong>Usage records.</strong> For each API call we store the
+  API key identifier, the account identifier associated with that key, which
+  endpoint was called, how many messages were in the request, and the time.
+  This is what billing is calculated from.</p>
+  <p class="muted"><strong>Account data.</strong> If you hold an API key, we
+  store the key's identifier, a display name you chose, a short non-secret
+  prefix, and the dates it was created, last used and revoked. API keys
+  themselves are stored as a cryptographic hash, so we cannot read your key
+  and neither could anyone who obtained a copy of our database.</p>
+  <p class="muted"><strong>Ordinary server records.</strong> Our hosting
+  provider records standard connection information such as IP address and
+  request time, as any web server does. Rate limiting uses the calling IP
+  address in memory only, and that record is discarded within minutes.</p>
+
+  <h2 style="font-size:1.25rem;margin-top:2rem">Cookies</h2>
+  <p class="muted">This site sets no cookies and uses no third party analytics
+  or advertising scripts. There is nothing to consent to, which is why you were
+  not asked.</p>
+
+  <h2 style="font-size:1.25rem;margin-top:2rem">Lawful basis</h2>
+  <p class="muted">Where you are our customer, we process your account and usage
+  data to perform our contract with you. Where your customers' messages pass
+  through the service, you are the data controller and we act as your data
+  processor, handling that content only on your instruction and only to return
+  a verdict.</p>
+
+  <h2 style="font-size:1.25rem;margin-top:2rem">How long we keep things</h2>
+  <p class="muted">Message content: not retained. Usage records: retained while
+  your account is active and for as long as we are required to keep billing
+  records afterwards. Account and key records: until you delete the key or the
+  account, after which they are removed.</p>
+
+  <h2 style="font-size:1.25rem;margin-top:2rem">Who else sees it</h2>
+  <p class="muted">We use Hugging Face for hosting and Supabase for the database
+  holding key and usage records. Both may process data outside Nigeria. We do
+  not sell data, and we do not share it with anyone for advertising.</p>
+
+  <h2 style="font-size:1.25rem;margin-top:2rem">Your rights</h2>
+  <p class="muted">Under the Nigeria Data Protection Act you may ask what
+  personal data we hold about you, ask for it to be corrected or deleted, object
+  to how it is processed, and ask for a copy of it. Write to the address above
+  and we will respond. You may also complain to the Nigeria Data Protection
+  Commission.</p>
+
+  <h2 style="font-size:1.25rem;margin-top:2rem">Changes</h2>
+  <p class="muted">If this policy changes materially we will change the date at
+  the top and tell active customers directly.</p>
+</section>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap foot-row">
+    <p style="margin:0">Wilma · Made in Lagos</p>
+    <nav aria-label="Footer">
+      <a href="/">Home</a><a href="/terms.html">Terms</a><a href="/docs">API reference</a>
+    </nav>
+  </div>
+</footer>
+</body>
+</html>

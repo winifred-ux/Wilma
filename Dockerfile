@@ -16,6 +16,7 @@ RUN pip install --upgrade pip && pip install -r /app/requirements-hf.txt
 
 COPY pyproject.toml /app/pyproject.toml
 COPY src /app/src
+COPY static /app/static
 
 RUN pip install -e .
 

@@ -18,6 +18,7 @@ from __future__ import annotations
 import httpx
 
 
+import hashlib
 import os
 import time
 from contextlib import asynccontextmanager
@@ -315,6 +316,55 @@ SUPABASE_URL_FOR_AUTH = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY_FOR_AUTH = os.environ.get("SUPABASE_SERVICE_KEY", "")
 
 
+def _hash_api_key(key: str) -> str:
+    """SHA-256 of the raw key. Only the hash is stored, so a database leak
+    does not expose usable customer credentials."""
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()
+
+
+async def _lookup_key(match: dict) -> Optional[dict]:
+    """Find a live (non-revoked) api_keys row matching the given filter."""
+    params = dict(match)
+    params.update({
+        "revoked_at": "is.null",
+        "select": "id,user_id,name",
+        "limit": "1",
+    })
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        response = await client.get(
+            f"{SUPABASE_URL_FOR_AUTH}/rest/v1/api_keys",
+            params=params,
+            headers={
+                "apikey": SUPABASE_SERVICE_KEY_FOR_AUTH,
+                "Authorization": f"Bearer {SUPABASE_SERVICE_KEY_FOR_AUTH}",
+            },
+        )
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail="Could not validate API key.")
+    rows = response.json()
+    return rows[0] if rows else None
+
+
+async def _migrate_key_to_hash(key_id, key_hash: str) -> None:
+    """Store the hash and clear the plaintext key. Best effort: a failure here
+    must never break a customer request."""
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            await client.patch(
+                f"{SUPABASE_URL_FOR_AUTH}/rest/v1/api_keys",
+                params={"id": f"eq.{key_id}"},
+                json={"key_hash": key_hash, "key_full": None},
+                headers={
+                    "apikey": SUPABASE_SERVICE_KEY_FOR_AUTH,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_KEY_FOR_AUTH}",
+                    "Content-Type": "application/json",
+                },
+            )
+        print(f"[wilma-api] migrated api key {key_id} to hashed storage")
+    except Exception as exc:
+        print(f"[wilma-api] key migration failed for {key_id}: {exc!r}")
+
+
 async def verify_api_key_optional(authorization: Optional[str] = Header(default=None)):
     """
     Optional API key validation.
@@ -344,35 +394,25 @@ async def verify_api_key_optional(authorization: Optional[str] = Header(default=
             detail="Server is not configured for API key validation."
         )
 
+    key_hash = _hash_api_key(key)
+
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(
-                f"{SUPABASE_URL_FOR_AUTH}/rest/v1/api_keys",
-                params={
-                    "key_full": f"eq.{key}",
-                    "revoked_at": "is.null",
-                    "select": "id,user_id,name",
-                    "limit": "1",
-                },
-                headers={
-                    "apikey": SUPABASE_SERVICE_KEY_FOR_AUTH,
-                    "Authorization": f"Bearer {SUPABASE_SERVICE_KEY_FOR_AUTH}",
-                },
-            )
+        key_data = await _lookup_key({"key_hash": f"eq.{key_hash}"})
+
+        if key_data is None:
+            # Legacy row: the key is still stored in plaintext. Accept it once,
+            # then migrate it to a hash and erase the plaintext copy.
+            key_data = await _lookup_key({"key_full": f"eq.{key}"})
+            if key_data is not None:
+                await _migrate_key_to_hash(key_data["id"], key_hash)
     except httpx.RequestError:
         raise HTTPException(
             status_code=503,
             detail="Could not validate API key (auth service unreachable)."
         )
 
-    if response.status_code != 200:
-        raise HTTPException(status_code=500, detail="Could not validate API key.")
-
-    keys = response.json()
-    if not keys:
+    if key_data is None:
         raise HTTPException(status_code=401, detail="Invalid or revoked API key.")
-
-    key_data = keys[0]
 
     # Best-effort: update last_used_at (don't fail request if this fails)
     try:
@@ -393,7 +433,7 @@ async def verify_api_key_optional(authorization: Optional[str] = Header(default=
     return key_data
 
 
-@app.get("/", tags=["meta"])
+@app.get("/api", tags=["meta"])
 def root() -> dict:
     return {
         "name": "Wilma API",
@@ -690,3 +730,57 @@ def _verdict_impl(req, background, key_info) -> "VerdictResponse":
         models=opinions,
         latency_ms=round((time.perf_counter() - start) * 1000, 2),
     )
+
+
+# ---------------------------------------------------------------------------
+# Demo front end. Mounted last: a StaticFiles mount at "/" is a catch-all and
+# would shadow every route declared after it.
+# ---------------------------------------------------------------------------
+from fastapi.staticfiles import StaticFiles  # noqa: E402
+
+_STATIC_DIR = Path(__file__).resolve().parents[3] / "static"
+if not _STATIC_DIR.is_dir():
+    _STATIC_DIR = Path("/app/static")
+
+if _STATIC_DIR.is_dir():
+    app.mount("/", StaticFiles(directory=str(_STATIC_DIR), html=True), name="static")
+    print(f"[wilma-api] serving demo page from {_STATIC_DIR}")
+else:
+    print("[wilma-api] no static directory found; \"/\" will 404")
+
+# ---------------------------------------------------------------------------
+# Static asset caching and a human 404 page. Declared after the mount so
+# that _STATIC_DIR is already resolved.
+# ---------------------------------------------------------------------------
+from fastapi.responses import FileResponse, JSONResponse  # noqa: E402
+from starlette.exceptions import HTTPException as StarletteHTTPException  # noqa: E402
+
+_API_PREFIXES = (
+    "/classify", "/verdict", "/usage", "/health", "/api",
+    "/docs", "/redoc", "/openapi.json",
+)
+_LONG_CACHE = (".css", ".svg", ".png", ".jpg", ".webp", ".woff2", ".ico")
+
+
+@app.middleware("http")
+async def static_cache_headers(request: Request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    if path.endswith(_LONG_CACHE):
+        response.headers["Cache-Control"] = "public, max-age=86400"
+    elif path == "/" or path.endswith(".html"):
+        response.headers["Cache-Control"] = "public, max-age=300, must-revalidate"
+    return response
+
+
+@app.exception_handler(StarletteHTTPException)
+async def not_found_handler(request: Request, exc: StarletteHTTPException):
+    wants_html = "text/html" in request.headers.get("accept", "")
+    is_api = request.url.path.startswith(_API_PREFIXES)
+    if exc.status_code == 404 and wants_html and not is_api:
+        page = _STATIC_DIR / "404.html"
+        if page.is_file():
+            return FileResponse(str(page), status_code=404)
+    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
+
+

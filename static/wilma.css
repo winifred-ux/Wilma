@@ -1,0 +1,248 @@
+/* ==========================================================================
+   Wilma design system
+   One stylesheet, no build step. Tokens first, then primitives, then parts.
+   Light and dark are both first class: every colour is defined on :root and
+   re-defined under prefers-color-scheme: dark.
+   ========================================================================== */
+
+:root{
+  /* Brand. Deliberately jade rather than the default SaaS blue: it reads as
+     security and money without looking like every other fintech template. */
+  --brand-900:#04302c;
+  --brand-700:#0a6158;
+  --brand-500:#0e9384;
+  --brand-300:#4fc3b2;
+  --brand-100:#d3f2ec;
+
+  /* Verdict semantics. Never the only signal: every state also has a label,
+     an icon shape and a distinct position. */
+  --block:#c8352f;
+  --block-bg:#fdeceb;
+  --review:#a9670b;
+  --review-bg:#fdf3e2;
+  --pass:#1f7a44;
+  --pass-bg:#e8f6ed;
+
+  /* Neutrals, warm-tinted so the page does not feel clinical */
+  --bg:#fbfaf8;
+  --surface:#ffffff;
+  --surface-2:#f4f2ee;
+  --line:#e3dfd8;
+  --line-strong:#cdc7bc;
+  --ink:#1a1917;
+  --ink-2:#4a4740;
+  --ink-3:#757067;
+
+  --focus:#0e9384;
+  --shadow:0 1px 2px rgba(26,25,23,.05), 0 8px 24px -12px rgba(26,25,23,.18);
+
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+
+  --r-sm:8px; --r-md:12px; --r-lg:18px; --r-full:999px;
+  --step:clamp(1rem,.92rem + .4vw,1.0625rem);
+}
+
+@media (prefers-color-scheme: dark){
+  :root{
+    --brand-500:#3fc0ae;
+    --brand-300:#7ad6c7;
+    --brand-100:#0b3b36;
+
+    --block:#ff8d86;
+    --block-bg:#331b1a;
+    --review:#ffc264;
+    --review-bg:#332614;
+    --pass:#67d894;
+    --pass-bg:#123122;
+
+    --bg:#0e0f11;
+    --surface:#16181b;
+    --surface-2:#1d2024;
+    --line:#282c31;
+    --line-strong:#3a3f46;
+    --ink:#eceef1;
+    --ink-2:#b3b9c1;
+    --ink-3:#848c96;
+
+    --focus:#3fc0ae;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 32px -16px rgba(0,0,0,.7);
+  }
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:var(--step);line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* Backdrop: a soft generated gradient field. Decorative only, so it is
+   aria-hidden in the markup and never carries meaning. */
+.backdrop{
+  position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(60rem 40rem at 15% -10%, color-mix(in oklab, var(--brand-500) 14%, transparent), transparent 60%),
+    radial-gradient(45rem 35rem at 95% 0%, color-mix(in oklab, var(--review) 10%, transparent), transparent 55%);
+}
+
+.wrap{max-width:74rem;margin:0 auto;padding:0 clamp(1rem,4vw,2.5rem)}
+.narrow{max-width:46rem}
+
+a{color:var(--brand-500);text-underline-offset:3px}
+a:hover{color:var(--brand-700)}
+@media (prefers-color-scheme: dark){a:hover{color:var(--brand-300)}}
+
+:focus-visible{outline:3px solid var(--focus);outline-offset:3px;border-radius:4px}
+
+.skip{
+  position:absolute;left:-9999px;top:0;background:var(--surface);
+  color:var(--ink);padding:12px 18px;border-radius:0 0 var(--r-sm) 0;z-index:50;
+}
+.skip:focus{left:0}
+
+/* ---------- type ---------- */
+h1,h2,h3{line-height:1.18;letter-spacing:-.02em;margin:0}
+h1{font-size:clamp(2.1rem,1.5rem + 2.6vw,3.4rem);font-weight:680}
+h2{font-size:clamp(1.5rem,1.2rem + 1.2vw,2.1rem);font-weight:640}
+h3{font-size:1.0625rem;font-weight:640}
+.eyebrow{
+  font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:640;margin:0 0 .75rem
+}
+.lede{font-size:clamp(1.05rem,1rem + .5vw,1.25rem);color:var(--ink-2);max-width:56ch}
+.muted{color:var(--ink-2)}
+.small{font-size:.875rem;color:var(--ink-3)}
+
+/* ---------- layout ---------- */
+section{padding-block:clamp(3rem,7vw,5.5rem)}
+.rule{border:0;border-top:1px solid var(--line);margin:0}
+.grid{display:grid;gap:1rem}
+@media(min-width:720px){
+  .grid-3{grid-template-columns:repeat(3,1fr)}
+  .grid-2{grid-template-columns:repeat(2,1fr)}
+}
+
+.card{
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r-lg);padding:1.35rem 1.4rem;box-shadow:var(--shadow)
+}
+
+/* ---------- controls ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:.55rem;
+  background:var(--brand-500);color:#fff;border:1px solid transparent;
+  border-radius:var(--r-full);padding:.8rem 1.5rem;
+  font:inherit;font-weight:620;cursor:pointer;
+  transition:transform .16s ease, box-shadow .16s ease, background .16s ease;
+  min-height:44px;
+}
+.btn:hover{background:var(--brand-700);transform:translateY(-1px);
+  box-shadow:0 8px 20px -10px color-mix(in oklab, var(--brand-500) 70%, transparent)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.55;cursor:default;transform:none;box-shadow:none}
+@media (prefers-color-scheme: dark){
+  .btn{color:#06211e}
+  .btn:hover{background:var(--brand-300)}
+}
+.btn-ghost{
+  background:transparent;color:var(--ink);border-color:var(--line-strong)
+}
+.btn-ghost:hover{background:var(--surface-2);color:var(--ink);box-shadow:none}
+
+textarea{
+  width:100%;min-height:7.5rem;resize:vertical;
+  background:var(--surface);color:var(--ink);
+  border:1px solid var(--line-strong);border-radius:var(--r-md);
+  padding:.95rem 1rem;font:inherit
+}
+textarea::placeholder{color:var(--ink-3)}
+textarea:focus-visible{outline:3px solid var(--focus);outline-offset:1px;border-color:transparent}
+
+.chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.9rem;padding:0;list-style:none}
+.chip{
+  background:var(--surface);border:1px solid var(--line-strong);color:var(--ink-2);
+  border-radius:var(--r-full);padding:.5rem .9rem;font:inherit;font-size:.875rem;
+  cursor:pointer;min-height:38px;transition:border-color .15s ease,color .15s ease
+}
+.chip:hover{border-color:var(--brand-500);color:var(--ink)}
+
+/* ---------- verdict ---------- */
+.verdict{
+  display:flex;gap:1rem;align-items:flex-start;
+  border:1px solid var(--line);border-left-width:5px;
+  border-radius:var(--r-md);padding:1.1rem 1.2rem;background:var(--surface)
+}
+.verdict[data-state="block"]{border-left-color:var(--block);background:var(--block-bg)}
+.verdict[data-state="review"]{border-left-color:var(--review);background:var(--review-bg)}
+.verdict[data-state="pass"]{border-left-color:var(--pass);background:var(--pass-bg)}
+.vmark{flex:0 0 auto;width:1.6rem;height:1.6rem;margin-top:.15rem}
+.vname{font-weight:700;letter-spacing:.01em;font-size:1.15rem}
+.verdict[data-state="block"] .vname{color:var(--block)}
+.verdict[data-state="review"] .vname{color:var(--review)}
+.verdict[data-state="pass"] .vname{color:var(--pass)}
+.vwhy{color:var(--ink-2);font-size:.95rem;margin-top:.15rem}
+
+.opinion{
+  display:grid;grid-template-columns:1fr auto;gap:.4rem 1rem;
+  border:1px solid var(--line);border-radius:var(--r-md);
+  padding:.85rem 1rem;background:var(--surface)
+}
+.opinion .who{font-family:var(--mono);font-size:.8125rem;color:var(--ink-3)}
+.opinion .said{font-weight:620;font-size:.9375rem}
+.meter{grid-column:1 / -1;height:.4rem;background:var(--surface-2);
+  border-radius:var(--r-full);overflow:hidden}
+.meter>i{display:block;height:100%;width:0;border-radius:var(--r-full);
+  transition:width .5s cubic-bezier(.22,1,.36,1)}
+
+.reveal{opacity:0;transform:translateY(10px);
+  transition:opacity .5s ease, transform .5s cubic-bezier(.22,1,.36,1)}
+.reveal.in{opacity:1;transform:none}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;
+    transition-duration:.001ms !important;scroll-behavior:auto !important}
+  .reveal{opacity:1;transform:none}
+}
+
+/* ---------- data ---------- */
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.9375rem}
+caption{text-align:left;color:var(--ink-3);font-size:.8125rem;padding-bottom:.6rem}
+th,td{text-align:left;padding:.7rem .8rem;border-bottom:1px solid var(--line)}
+th{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+details{border-bottom:1px solid var(--line);padding:.35rem 0}
+summary{cursor:pointer;padding:.85rem 0;font-weight:620;list-style:none;
+  display:flex;justify-content:space-between;gap:1rem;min-height:44px;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--ink-3);font-weight:400;font-size:1.3rem}
+details[open] summary::after{content:"\2212"}
+details p{margin:0 0 1rem;color:var(--ink-2);max-width:66ch}
+
+pre{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);
+  padding:1rem;overflow-x:auto;font-family:var(--mono);font-size:.8125rem;line-height:1.55}
+
+.callout{border-left:3px solid var(--review);padding:.2rem 0 .2rem 1.1rem;
+  color:var(--ink-2);max-width:70ch}
+
+/* ---------- header / footer ---------- */
+.site-head{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);
+  background:color-mix(in oklab, var(--bg) 82%, transparent);
+  border-bottom:1px solid var(--line)}
+.head-row{display:flex;align-items:center;justify-content:space-between;
+  gap:1rem;padding-block:.85rem}
+.logo{display:inline-flex;align-items:center;gap:.6rem;font-weight:700;
+  letter-spacing:-.02em;color:var(--ink);text-decoration:none;font-size:1.05rem}
+.nav{display:flex;gap:.35rem;align-items:center;flex-wrap:wrap}
+.nav a{color:var(--ink-2);text-decoration:none;padding:.5rem .7rem;
+  border-radius:var(--r-sm);font-size:.9375rem}
+.nav a:hover{color:var(--ink);background:var(--surface-2)}
+@media(max-width:560px){.nav .hide-sm{display:none}}
+
+.site-foot{border-top:1px solid var(--line);padding-block:2.5rem 3.5rem;
+  color:var(--ink-3);font-size:.875rem}
+.foot-row{display:flex;flex-wrap:wrap;gap:1rem 2rem;justify-content:space-between}
+.foot-row nav{display:flex;gap:1.25rem;flex-wrap:wrap}
