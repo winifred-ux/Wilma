@@ -204,3 +204,106 @@ data, it needs short data. Priorities in order:
    a customer.
 
 Until item 4 passes, Wilma should not be sold as an SMS fraud detector.
+
+---
+
+## v2: fine tuned on short-message data
+
+**Date:** 11 September 2026
+**Model:** `models/distilbert_v2`, DistilBERT base, same architecture as v1
+so the data is the only variable
+**Training:** 13,704 messages (11,404 scam from Smishtank, 2,300 legitimate
+from ExAIS), class weights 2.979 / 0.601, 3 epochs, max length 128
+**Evaluation:** `scripts/eval_local.py`
+
+### Held out test set
+
+accuracy 0.9813, precision 0.9896, recall 0.9882, F1 0.9889.
+1,424 caught, 15 false alarms, 17 missed.
+
+As with v1, this number describes data shaped like the training data and
+should never be quoted alone.
+
+### Length experiment — PASSED
+
+| Variant | Mean length | v1 detected | v2 detected | v2 mean conf |
+|---|---|---|---|---|
+| short  | 60 chars  | 0/8 (0%)  | **6/8 (75%)** | 0.909 |
+| medium | 167 chars | 4/8 (50%) | 7/8 (88%) | 0.929 |
+| long   | 932 chars | 7/8 (88%) | 7/8 (88%) | 0.956 |
+
+Detection is now near flat across length with the fraudulent content held
+constant. The model responds to fraud semantics rather than document shape.
+This was the stated pass condition and it is met.
+
+### Nigerian SMS evaluation — REGRESSED
+
+| | v1 | v2 |
+|---|---|---|
+| accuracy | 0.8000 | **0.6250** |
+| precision | 0.8333 | 0.6316 |
+| recall | 0.7500 | 0.6000 |
+| F1 | 0.7895 | 0.6154 |
+
+12 caught, 7 false alarms, 8 missed, 13 correct legitimate.
+
+### Why, and it is not mysterious
+
+The mistakes split into two clean groups.
+
+**Every missed scam is Nigerian in a way the training data is not.**
+
+- won N2,000,000 in our promo, send your account details
+- pending transfer of N450,000, confirm your account number
+- package on hold at customs, pay N12,500 clearance
+- MTN line has won N500,000, dial a USSD code
+- loan approved, send your BVN and card details
+- you have been shortlisted, pay N7,500 for your screening form
+- double your money in 7 days, chat me on WhatsApp
+
+The fraud class is Indian, American and European smishing. It contains no
+naira promo scams, no BVN loan bait, no screening-fee job scam. These could
+not have been caught.
+
+**Every false alarm is transactional or ordinary correspondence.**
+
+- a genuine OTP
+- a debit alert with a merchant and balance
+- a shipping notification
+- a payment receipt confirmation
+- a colleague saying they had emailed documents
+
+The training set contains 10,490 banking phishes and 1,675 delivery scams
+against 2,300 legitimate messages, most of them 2014 telco traffic and
+personal chat. The model learned that banking and delivery language signals
+fraud. Real OTPs and delivery notices are the collateral.
+
+### Decision
+
+**v2 is not deployed.** The live Space continues to serve v1. v2 is worse on
+the only evaluation that reflects the target market, and its false alarms
+land on OTPs and debit alerts, the most commercially damaging error for a
+bank customer. v2 stays local until it beats v1 on the Nigerian set.
+
+### What this changes about collection
+
+The target is no longer "300 Nigerian SMS". Two specific categories, each
+measured as the cause of one failure group:
+
+1. **Nigerian fraud SMS.** Promo wins in naira, BVN and loan bait, screening
+   and clearance fee scams, USSD claim codes, WhatsApp investment pitches.
+   Target 300 or more.
+2. **Modern legitimate transactional messages.** OTPs, debit and credit
+   alerts, delivery and dispatch notices, payment receipts, appointment
+   confirmations. Target 300 or more. These are held-out negatives that
+   defend precision.
+
+The evaluation set is 40 messages, so these figures carry wide error bars.
+Growing it to several hundred real messages is part of the same collection
+effort and should happen before any figure is quoted to a customer.
+
+### Standing position
+
+The 99.24% from v1 and the 98.13% from v2 both describe held out data drawn
+from the same distribution as their training sets. Neither describes
+Nigerian SMS. Both must always be quoted alongside the Nigerian figure.

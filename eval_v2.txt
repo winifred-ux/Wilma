@@ -1,0 +1,44 @@
+Loading weights:   0%|          | 0/104 [00:00<?, ?it/s]Loading weights: 100%|██████████| 104/104 [00:00<00:00, 24976.10it/s]
+======================================================================
+NIGERIAN SMS EVALUATION
+======================================================================
+accuracy 0.6250  precision 0.6316  recall 0.6000  F1 0.6154
+caught 12  false alarms 7  missed 8  correct legit 13
+
+BEFORE: accuracy 0.8000  precision 0.8333  recall 0.7500
+
+  MISSED SCAM (0.961) CONGRATULATIONS! You have won N2,000,000 in our promo. Send your account details to claim.
+  MISSED SCAM (0.947) You have a pending transfer of N450,000. Confirm your account number to receive.
+  MISSED SCAM (0.973) Your package is on hold at customs. Pay N12,500 clearance fee to this account.
+  MISSED SCAM (0.998) Your MTN line has won N500,000. Dial *123*456# to claim your prize now.
+  MISSED SCAM (0.824) Loan approved! N300,000 ready for disbursement. Send your BVN and card details.
+  MISSED SCAM (0.791) Your account has been debited N89,500. If not you call 07033445566 immediately.
+  MISSED SCAM (0.886) You have been shortlisted for employment. Pay N7,500 for your screening form.
+  MISSED SCAM (0.995) Investment opportunity! Double your money in 7 days. Minimum N20,000. Chat me on WhatsApp.
+  FALSE ALARM (0.995) Your OTP is 483920. Do not share it with anyone.
+  FALSE ALARM (0.892) Debit alert: NGN5,000.00 to SHOPRITE LEKKI. Bal: NGN42,310.55
+  FALSE ALARM (0.961) Your order has been shipped and will arrive between Tuesday and Thursday.
+  FALSE ALARM (0.995) Thank you for your payment. Your receipt has been sent to your email.
+  FALSE ALARM (0.969) I have sent the documents to your email. Let me know if you received them.
+  FALSE ALARM (0.917) Electricity units purchased successfully. Token: 4823 7761 0928 3341
+  FALSE ALARM (0.852) Please confirm you will attend the standup at 9am so I can send the link.
+
+======================================================================
+LENGTH EXPERIMENT
+======================================================================
+id     short                  medium                 long                  
+s1     legitimate 0.795       scam 0.969             scam 0.998            
+s2     scam 0.994             scam 0.999             scam 0.999            
+s3     scam 0.897             scam 0.997             scam 0.996            
+s4     scam 0.984             scam 0.976             scam 0.918            
+s5     scam 0.654             scam 0.630             legitimate 0.750      
+s6     scam 0.999             scam 0.998             scam 0.999            
+s7     legitimate 0.953       legitimate 0.865       scam 0.988            
+s8     scam 0.997             scam 0.999             scam 0.999            
+
+short   detected 6/8 ( 75%)  mean conf 0.909  mean 60 chars
+medium  detected 7/8 ( 88%)  mean conf 0.929  mean 167 chars
+long    detected 7/8 ( 88%)  mean conf 0.956  mean 932 chars
+
+BEFORE: short 0/8 (0%), medium 4/8 (50%), long 7/8 (88%)
+PASS CONDITION: detection flat across all three.
