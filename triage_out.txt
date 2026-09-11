@@ -1,0 +1,33 @@
+======================================================================
+TRIAGE
+======================================================================
+  legitimate kept         2386
+  needs review             882
+  scam -> marketing        488
+  scam -> fraud             27
+  scam -> bank alert        18
+  dropped junk              10
+
+data/collected/exais_clean.csv: 2919 rows  (scam 27, legitimate 2892)
+data/collected/exais_review.csv: 882 rows for you to decide
+
+FRAUD SUBTYPES
+  promo_win            22
+  otp_harvest           3
+  bank_phish            1
+  investment            1
+
+REVIEW SAMPLE
+----------------------------------------------------------------------
+  Your Viber code <CODE>.Close this message and enter the code into Viber to activate your account.
+  REPLY WITH SMS
+  01 10 1992
+  ODEOMU; OSUN STATE
+  EPL Is Here Again. Text Sport to 35241 For Sport News Update. Cost N100/30days
+  Join the winning team now & enjoy unlimited instant airtime when you answer 3 question in the Brain-Wave game.
+  Nigeria's 100 years!Celebrate with us &you can win the 'Nigeria Centenary 100 Million Naira Mega Jackpot'!Send
+  Today is Bimbola Kenny's birthday. Reply to post on her Timeline or reply 1 to post "Happy Birthday!".
+  Today is Oluwafunke Jawolusi's birthday. Reply to post on her Timeline or reply 1 to post "Happy Birthday!".
+  Egbetola Olanrewaju: who wants a free ipad? <URL> (Sent to you, Aisosa, Bakare, Williams, Oguntoye, Joke, and 
+  If you are in need of more creative, inventive thinking at work or school, here are ways to boost your creativ
+  How Nigerian are you? Prove it! Answer 3 Questions correctly & be rewarded with DSTV Walka7s & more. Text GOL 
