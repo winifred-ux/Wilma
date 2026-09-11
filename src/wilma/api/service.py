@@ -38,6 +38,7 @@ BINARY_MODEL_PATH = HF_REPO            # subfolder specified at load time
 MULTICLASS_MODEL_PATH = HF_REPO        # subfolder specified at load time
 BINARY_SUBFOLDER = "distilbert_v1"
 MULTICLASS_SUBFOLDER = "distilbert_v1_multiclass"
+SHORT_SUBFOLDER = "distilbert_v2"   # short-message model, used in the ensemble
 
 MAX_LENGTH = 256
 BATCH_LIMIT = 50
@@ -116,6 +117,7 @@ class ModelBundle:
 _state: dict[str, Optional[object]] = {
     "binary": None,
     "multiclass": None,
+    "short": None,
     "device": None,
 }
 
@@ -139,6 +141,13 @@ async def lifespan(app: FastAPI):
 
     print(f"[wilma-api] Loading multi-class model from {MULTICLASS_MODEL_PATH}/{MULTICLASS_SUBFOLDER}")
     _state["multiclass"] = ModelBundle(MULTICLASS_MODEL_PATH, device, subfolder=MULTICLASS_SUBFOLDER)
+
+    print(f"[wilma-api] Loading short-message model from {HF_REPO}/{SHORT_SUBFOLDER}")
+    try:
+        _state["short"] = ModelBundle(HF_REPO, device, subfolder=SHORT_SUBFOLDER)
+    except Exception as exc:  # the ensemble is optional; /classify must still work
+        print(f"[wilma-api] short-message model unavailable: {exc}")
+        _state["short"] = None
 
     print(f"[wilma-api] Ready. Device: {device}")
     yield
@@ -552,4 +561,119 @@ async def usage(days: int = 30, key_info=Depends(verify_api_key_required)) -> Us
         total_requests=len(rows),
         total_messages=total_messages,
         by_endpoint=by_endpoint,
+    )
+
+# ---------------------------------------------------------------------------
+# Three-state verdict (ensemble of v1 and v2)
+#
+# v1 was trained on long-form email corpora and knows advance-fee and Nigerian
+# prize language. v2 was trained on short-message smishing and knows
+# credential harvesting. On the Nigerian evaluation set they fail on different
+# messages, and between them they caught every scam.
+#
+#   both models flag  -> block   (highest precision)
+#   exactly one flags -> review  (highest recall, send to a human)
+#   neither flags     -> pass
+#
+# See docs/EVALUATION.md for the measurements behind this.
+# ---------------------------------------------------------------------------
+
+VERDICT_THRESHOLD = 0.5
+
+
+class ModelOpinion(BaseModel):
+    model_id: str
+    is_scam: bool
+    scam_probability: float
+
+
+class VerdictResponse(BaseModel):
+    verdict: str = Field(..., description="block, review or pass")
+    action: str = Field(..., description="what the caller should do")
+    agreement: str = Field(..., description="both, one or neither")
+    models: list[ModelOpinion]
+    latency_ms: float
+
+
+def _scam_probability(text: str, bundle: "ModelBundle") -> float:
+    enc = bundle.tokenizer(
+        text, truncation=True, padding=True,
+        max_length=MAX_LENGTH, return_tensors="pt",
+    ).to(bundle.device)
+    with torch.no_grad():
+        probs = torch.softmax(bundle.model(**enc).logits, dim=1)[0]
+    scam_idx = 1
+    for idx, name in bundle.id2label.items():
+        if str(name).strip().lower() == "scam":
+            scam_idx = int(idx)
+            break
+    return float(probs[scam_idx])
+
+
+@app.post("/verdict", response_model=VerdictResponse, tags=["inference"])
+def verdict(
+    req: ClassifyRequest,
+    background: BackgroundTasks,
+    key_info=Depends(verify_api_key_optional),
+) -> VerdictResponse:
+    """Three-state verdict from both models. Built for fraud operations:
+    auto-block what both models agree on, queue the rest for a human."""
+    start = time.perf_counter()
+
+    binary = _state["binary"]
+    short = _state["short"]
+    if binary is None:
+        raise HTTPException(status_code=503, detail="Models not loaded yet")
+
+    opinions: list[ModelOpinion] = []
+
+    p1 = _scam_probability(req.text, binary)  # type: ignore[arg-type]
+    opinions.append(ModelOpinion(
+        model_id="distilbert_v1",
+        is_scam=p1 >= VERDICT_THRESHOLD,
+        scam_probability=round(p1, 4),
+    ))
+
+    if short is not None:
+        p2 = _scam_probability(req.text, short)  # type: ignore[arg-type]
+        opinions.append(ModelOpinion(
+            model_id="distilbert_v2",
+            is_scam=p2 >= VERDICT_THRESHOLD,
+            scam_probability=round(p2, 4),
+        ))
+
+    flags = sum(1 for o in opinions if o.is_scam)
+
+    if len(opinions) < 2:
+        # Only one model available: never auto-block on a single opinion.
+        agreement = "single_model"
+        verdict_value = "review" if flags else "pass"
+    elif flags == 2:
+        agreement, verdict_value = "both", "block"
+    elif flags == 1:
+        agreement, verdict_value = "one", "review"
+    else:
+        agreement, verdict_value = "neither", "pass"
+
+    action = {
+        "block": "Block the message and notify the customer.",
+        "review": "Models disagree. Send to a human review queue.",
+        "pass": "No fraud signal. Deliver normally.",
+    }[verdict_value]
+
+    if key_info:
+        background.add_task(
+            _record_usage,
+            key_info["id"],
+            key_info.get("user_id"),
+            "/verdict",
+            1,
+        )
+
+    return VerdictResponse(
+        verdict=verdict_value,
+        action=action,
+        agreement=agreement,
+        models=opinions,
+        latency_ms=round((time.perf_counter() - start) * 1000, 2),
     )
