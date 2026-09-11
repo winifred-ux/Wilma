@@ -307,3 +307,104 @@ effort and should happen before any figure is quoted to a customer.
 The 99.24% from v1 and the 98.13% from v2 both describe held out data drawn
 from the same distribution as their training sets. Neither describes
 Nigerian SMS. Both must always be quoted alongside the Nigerian figure.
+
+### Confidence calibration (v2)
+
+`scripts/calibrate.py`. Temperature fitted on the validation set: 1.122.
+
+| Set | Expected calibration error, raw | Calibrated |
+|---|---|---|
+| validation | 0.0074 | 0.0059 |
+| Nigerian SMS | 0.3701 | 0.3605 |
+
+The model is well calibrated in distribution and severely overconfident out
+of it. Temperature scaling fitted in distribution does not transfer.
+
+Threshold sweep on the Nigerian set, diagnostic only and never tuned on:
+
+| Threshold | Accuracy | Precision | Recall | False alarms | Missed |
+|---|---|---|---|---|---|
+| 0.50 | 0.625 | 0.632 | 0.600 | 7 | 8 |
+| 0.90 | 0.700 | 0.750 | 0.600 | 4 | 8 |
+| 0.95 | 0.700 | 0.786 | 0.550 | 3 | 9 |
+| 0.99 | 0.675 | 0.818 | 0.450 | 2 | 11 |
+
+A high threshold buys precision, which matters for a bank, but no threshold
+reaches v1's 0.800 accuracy. Confidence alone cannot repair the gap.
+
+Any operating threshold quoted to a customer must be chosen on a Nigerian
+validation set of several hundred messages, not on these 40.
+
+---
+
+## Ensemble: v1 and v2 together
+
+**Date:** 11 September 2026
+**Script:** `scripts/ensemble.py`
+**Set:** the 40-message Nigerian evaluation set
+
+v1 was trained on long-form email corpora. v2 was trained on short-message
+smishing. They fail on different messages, so they were tested together.
+
+| Rule | Accuracy | Precision | Recall | F1 | False alarms | Missed |
+|---|---|---|---|---|---|---|
+| v1 alone | 0.800 | 0.833 | 0.750 | 0.789 | 3 | 5 |
+| v2 alone | 0.625 | 0.632 | 0.600 | 0.615 | 7 | 8 |
+| **OR** (either flags) | 0.800 | 0.714 | **1.000** | **0.833** | 8 | **0** |
+| **AND** (both flag) | 0.625 | **0.778** | 0.350 | 0.483 | **2** | 13 |
+| max prob >= 0.95 | 0.800 | 0.750 | 0.900 | 0.818 | 6 | 2 |
+
+### The finding
+
+**Together the two models catch every scam in the set.** 20 of 20, zero
+missed. Thirteen scams were caught by exactly one of the two.
+
+v1 caught and v2 missed: naira promo wins, MTN USSD prize claims, loan
+approval asking for BVN and card details, employment screening fee, customs
+clearance fee, fake debit alert with a callback number, WhatsApp investment
+pitch.
+
+v2 caught and v1 missed: NIN update SIM-blocking threat, short-form barrister
+inheritance, subscription renewal asking for card details, account under
+review asking for full card number, romance approach opener.
+
+This is complementary failure, not redundancy. v1 knows long-form advance-fee
+and Nigerian prize language. v2 knows short credential-harvesting smishing.
+
+### The cost, and what it points at
+
+All 8 false alarms are ordinary transactional or work messages: a shipping
+notice, a payment receipt, an electricity token purchase, a recharge
+confirmation, a colleague saying documents were emailed, a standup
+confirmation.
+
+Fraud recall is effectively solved on this set. The binding constraint is
+false positives on legitimate transactional messages. **Collection priority
+inverts: modern legitimate transactional Nigerian SMS is now the most
+valuable data to gather, ahead of more fraud examples.**
+
+### Three-state output
+
+The numbers support a verdict shape that matches how bank fraud operations
+actually run, rather than a single yes or no:
+
+| Condition | Verdict | Behaviour |
+|---|---|---|
+| both models flag | `block` | precision 0.778, 2 false alarms in 40 |
+| exactly one flags | `review` | recall 1.000, nothing gets past |
+| neither flags | `pass` | |
+
+Auto-block the certain cases, queue the uncertain for a human, let the rest
+through. This is a stronger product position than any single accuracy figure
+and it is honest about where the model is unsure.
+
+### Caveats
+
+- 40 messages. The error bars are wide and no figure here should be quoted
+  to a customer until the evaluation set reaches several hundred.
+- Running two models roughly doubles memory on the Space, which matters on
+  free CPU hardware.
+- v1's advantage is partly that it has seen Nigerian-style advance-fee text
+  through the 419 email corpora. It remains uncalibrated and weak on short
+  messages, which is why it is kept as half of a pair rather than trusted
+  alone.
