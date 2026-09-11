@@ -618,6 +618,17 @@ def verdict(
 ) -> VerdictResponse:
     """Three-state verdict from both models. Built for fraud operations:
     auto-block what both models agree on, queue the rest for a human."""
+    import traceback
+    try:
+        return _verdict_impl(req, background, key_info)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="verdict failed: %s | %s" % (
+            exc, traceback.format_exc().splitlines()[-3:]))
+
+
+def _verdict_impl(req, background, key_info) -> "VerdictResponse":
     start = time.perf_counter()
 
     binary = _state["binary"]
