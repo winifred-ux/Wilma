@@ -408,3 +408,70 @@ and it is honest about where the model is unsure.
   through the 419 email corpora. It remains uncalibrated and weak on short
   messages, which is why it is kept as half of a pair rather than trusted
   alone.
+
+---
+
+## /verdict live in production — and the first message exposed the gap
+
+**Date:** 11 September 2026
+**Endpoint:** `POST /verdict` on winifred12-wilma.hf.space
+**Implementation:** `src/wilma/api/service.py`
+
+Deployed. Both models load at startup; the v2 load is wrapped so that if the
+Space runs out of memory, `/classify` keeps working and only `/verdict`
+degrades. When only one model is available the endpoint returns `review`
+rather than `block`, because auto-blocking on a single opinion is the
+behaviour that costs a bank most.
+
+One deployment bug found and fixed: the v1 tokenizer emits `token_type_ids`,
+which DistilBERT's `forward()` does not accept. Dropped before the call.
+
+### First live request
+
+Input: `Your OTP is 483920. Do not share it with anyone.`
+
+```
+verdict:    block
+agreement:  both
+v1:         scam, 0.9989
+v2:         scam, 0.9947
+latency:    1636 ms
+```
+
+**A genuine OTP was auto-blocked, with both models agreeing at over 0.99.**
+
+The endpoint behaved exactly as designed. The agreement rule fired correctly.
+The problem is that the three-state design only protects against the case
+where the models fail differently. Here they fail identically, so agreement
+provides no safety at all.
+
+This is the most expensive error the product can make. A customer who cannot
+receive an OTP cannot log in and cannot transact, and calls support.
+
+### What it settles
+
+Collection is no longer one item on a list of improvements. It is the single
+thing standing between this and a sellable product, and the categories are
+now named by evidence rather than intuition:
+
+1. OTP and verification codes
+2. Debit alerts
+3. Credit alerts
+4. Delivery and dispatch notices
+5. Payment receipts and confirmations
+
+Real, Nigerian, a few hundred in total. Nigerian fraud examples remain needed
+for recall, but precision on these five is what is currently broken.
+
+### Also noted
+
+1.6 seconds per verdict on free CPU hardware running two models. Too slow for
+inline SMS screening at bank volume. That is a hosting problem rather than a
+model problem and does not block anything yet.
+
+### Standing position, unchanged
+
+v1 remains the deployed single-model classifier on `/classify`. `/verdict` is
+available and honest about its uncertainty, but neither is ready to be sold
+as an SMS fraud detector to a Nigerian institution until the precision
+problem on transactional messages is fixed with real data.
