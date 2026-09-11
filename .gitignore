@@ -83,3 +83,6 @@ results/
 /*.html
 # Training checkpoints (full model copies, not needed for inference)
 models/*/checkpoints/
+data/collected/smishtank/
+data/collected/exais/
+data/collected/uci/
