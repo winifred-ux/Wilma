@@ -600,6 +600,9 @@ def _scam_probability(text: str, bundle: "ModelBundle") -> float:
         text, truncation=True, padding=True,
         max_length=MAX_LENGTH, return_tensors="pt",
     ).to(bundle.device)
+    # DistilBERT's forward() has no token_type_ids argument, but the v1
+    # tokenizer config emits one. Drop it rather than crash.
+    enc.pop("token_type_ids", None)
     with torch.no_grad():
         probs = torch.softmax(bundle.model(**enc).logits, dim=1)[0]
     scam_idx = 1
@@ -618,14 +621,13 @@ def verdict(
 ) -> VerdictResponse:
     """Three-state verdict from both models. Built for fraud operations:
     auto-block what both models agree on, queue the rest for a human."""
-    import traceback
     try:
         return _verdict_impl(req, background, key_info)
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=500, detail="verdict failed: %s | %s" % (
-            exc, traceback.format_exc().splitlines()[-3:]))
+        print(f"[wilma-api] /verdict failed: {exc!r}")
+        raise HTTPException(status_code=500, detail="Verdict failed. See server logs.")
 
 
 def _verdict_impl(req, background, key_info) -> "VerdictResponse":
