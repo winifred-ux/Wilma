@@ -1,113 +1,107 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark" data-concept="black">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Terms of service — Wilma</title>
-<meta name="description" content="Terms of service for the Wilma fraud detection API.">
-<link rel="canonical" href="https://winifred12-wilma.hf.space/terms.html">
+<title>Terms of service · Wilma</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/wilma.css">
+<link rel="preconnect" href="https://rsms.me/">
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+<link rel="stylesheet" href="/wilma.css?v=6">
+<script src="/wilma.js?v=6"></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-<div class="backdrop" aria-hidden="true"></div>
-
-<header class="site-head">
-  <div class="wrap head-row">
-    <a class="logo" href="/">
-      <svg width="26" height="26" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-        <rect width="64" height="64" rx="14" fill="#0e9384"/>
-        <path d="M16 22l6 20 10-26 10 26 6-20" fill="none" stroke="#fff"
-              stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      Wilma
-    </a>
-    <nav class="nav" aria-label="Main">
-      <a href="/">Home</a>
-      <a href="/privacy.html">Privacy</a>
-      <a href="/docs">API</a>
-    </nav>
+<header class="nav">
+  <div class="wrap nav-row">
+    <a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M5 9l5 15 6-13 6 13 5-15" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Wilma</a>
+    <div class="nav-actions">
+      <button class="icon-btn theme-btn" type="button" data-theme-toggle aria-label="Toggle dark mode">
+        <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+      <a class="btn btn-ghost btn-sm" href="/signin.html">Sign in</a>
+      <a class="btn btn-sm" href="/">Home</a>
+    </div>
   </div>
 </header>
-
-<main id="main" class="wrap narrow">
-<section>
+<main id="main" class="wrap narrow doc">
   <p class="eyebrow">Legal</p>
-  <h1 style="font-size:clamp(1.9rem,1.5rem + 1.6vw,2.6rem)">Terms of service</h1>
-  <p class="small">Last updated 11 September 2026.</p>
 
-  <div class="callout" style="margin:1.5rem 0 2rem">
+  <h1>Terms of service</h1>
+  <p class="small" style="margin-top:14px">Last updated 11 September 2026.</p>
+
+  <div class="callout note"><p style="margin:0">
     A plain draft, written to be honest about what the service is today. It has
-    not been reviewed by a lawyer and should be before money changes hands.
-  </div>
+    not been reviewed by a lawyer and should be before money changes hands.</p></div>
 
-  <h2 style="font-size:1.25rem;margin-top:2rem">1. What Wilma is</h2>
-  <p class="muted">Wilma is an API that classifies message text and returns a
+  <nav class="toc" aria-label="On this page"><a href="#1-what-wilma-is">1. What Wilma is</a><a href="#2-pilot-status">2. Pilot status</a><a href="#3-your-api-key">3. Your API key</a><a href="#4-acceptable-use">4. Acceptable use</a><a href="#5-your-data">5. Your data</a><a href="#6-accuracy">6. Accuracy</a><a href="#7-fees">7. Fees</a><a href="#8-liability">8. Liability</a><a href="#9-ending-it">9. Ending it</a><a href="#10-governing-law">10. Governing law</a><a href="#11-contact">11. Contact</a></nav>
+  <h2 id="1-what-wilma-is">1. What Wilma is</h2>
+  <p>Wilma is an API that classifies message text and returns a
   fraud verdict. It is decision support. It is not a decision, and it does not
   replace your own fraud controls or your obligations to your customers.</p>
 
-  <h2 style="font-size:1.25rem;margin-top:2rem">2. Pilot status</h2>
-  <p class="muted">Wilma is in pilot. There is no service level agreement, no
+  <h2 id="2-pilot-status">2. Pilot status</h2>
+  <p>Wilma is in pilot. There is no service level agreement, no
   guaranteed uptime, and the models may change without notice as they improve.
   We will tell pilot customers when a model changes, because it may change your
   results.</p>
 
-  <h2 style="font-size:1.25rem;margin-top:2rem">3. Your API key</h2>
-  <p class="muted">Keep it secret. You are responsible for calls made with your
+  <h2 id="3-your-api-key">3. Your API key</h2>
+  <p>Keep it secret. You are responsible for calls made with your
   key. Tell us immediately if it is exposed and we will revoke and reissue it.
   We store only a hash of your key, so we cannot recover it for you.</p>
 
-  <h2 style="font-size:1.25rem;margin-top:2rem">4. Acceptable use</h2>
-  <p class="muted">Use Wilma to screen messages for fraud. Do not use it to
+  <h2 id="4-acceptable-use">4. Acceptable use</h2>
+  <p>Use Wilma to screen messages for fraud. Do not use it to
   build a competing classifier from our outputs, to attack the service, to
   exceed rate limits deliberately, or to process data you have no lawful right
   to process.</p>
 
-  <h2 style="font-size:1.25rem;margin-top:2rem">5. Your data</h2>
-  <p class="muted">You keep all rights in the content you send. We do not store
+  <h2 id="5-your-data">5. Your data</h2>
+  <p>You keep all rights in the content you send. We do not store
   message content and we do not train on it. See the
   <a href="/privacy.html">privacy policy</a>. Where the content includes
   personal data of your customers, you are the controller and we are your
   processor.</p>
 
-  <h2 style="font-size:1.25rem;margin-top:2rem">6. Accuracy</h2>
-  <p class="muted">No fraud classifier is correct every time and ours is not
+  <h2 id="6-accuracy">6. Accuracy</h2>
+  <p>No fraud classifier is correct every time and ours is not
   either. We publish our measured accuracy, including our failures, so you can
   judge it. You accept that Wilma will sometimes flag a legitimate message and
   sometimes miss a fraudulent one, and you agree to design your own systems on
   that assumption.</p>
 
-  <h2 style="font-size:1.25rem;margin-top:2rem">7. Fees</h2>
-  <p class="muted">Pilot use is free. If we introduce charges we will agree them
+  <h2 id="7-fees">7. Fees</h2>
+  <p>Pilot use is free. If we introduce charges we will agree them
   with you in writing before any are incurred.</p>
 
-  <h2 style="font-size:1.25rem;margin-top:2rem">8. Liability</h2>
-  <p class="muted">To the extent the law allows, Wilma is provided as is, and we
+  <h2 id="8-liability">8. Liability</h2>
+  <p>To the extent the law allows, Wilma is provided as is, and we
   are not liable for losses arising from fraud that was missed, from legitimate
   messages that were flagged, or from the service being unavailable. This does
   not limit liability that cannot lawfully be limited.</p>
 
-  <h2 style="font-size:1.25rem;margin-top:2rem">9. Ending it</h2>
-  <p class="muted">Either of us may stop at any time. On termination your keys
+  <h2 id="9-ending-it">9. Ending it</h2>
+  <p>Either of us may stop at any time. On termination your keys
   are revoked and your account records are deleted in line with the privacy
   policy.</p>
 
-  <h2 style="font-size:1.25rem;margin-top:2rem">10. Governing law</h2>
-  <p class="muted">These terms are governed by the laws of the Federal Republic
+  <h2 id="10-governing-law">10. Governing law</h2>
+  <p>These terms are governed by the laws of the Federal Republic
   of Nigeria.</p>
 
-  <h2 style="font-size:1.25rem;margin-top:2rem">11. Contact</h2>
-  <p class="muted"><a href="mailto:winifrednwanyibuife@gmail.com">winifrednwanyibuife@gmail.com</a></p>
-</section>
-</main>
+  <h2 id="11-contact">11. Contact</h2>
+  <p><a href="mailto:winiajah3@yahoo.com">winiajah3@yahoo.com</a></p>
 
-<footer class="site-foot">
-  <div class="wrap foot-row">
-    <p style="margin:0">Wilma · Made in Lagos</p>
-    <nav aria-label="Footer">
-      <a href="/">Home</a><a href="/privacy.html">Privacy</a><a href="/docs">API reference</a>
-    </nav>
+</main>
+<footer class="foot" style="margin-top:80px">
+  <div class="wrap">
+    <div class="foot-row">
+      <div><a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M5 9l5 15 6-13 6 13 5-15" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Wilma</a><p class="foot-sub">Fraud detection for Nigerian messages.</p></div>
+      <nav class="foot-links" aria-label="Footer"><a href="/docs">API reference</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></nav>
+    </div>
+    <div class="foot-bottom"><span>Made in Lagos by Winifred Ajah</span></div>
   </div>
 </footer>
 </body>

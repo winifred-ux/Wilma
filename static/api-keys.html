@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-concept="black">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API keys · Wilma</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://rsms.me/">
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+<link rel="stylesheet" href="/wilma.css?v=6">
+<script src="/wilma.js?v=6"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="app">
+  <aside class="side" id="side" aria-label="Sidebar"></aside>
+  <div>
+    <div class="app-top" id="app-top"></div>
+    <main class="main" id="main">
+      <div class="page-head">
+        <div>
+          <h1>API keys</h1>
+          <p>Use a key in the <span class="mono" style="font-size:13px">Authorization: Bearer</span> header of every request.</p>
+        </div>
+      </div>
+
+      <section class="panel">
+        <div class="panel-head"><div><h2>Create a new key</h2><p>Name it after where it will be used, like "Production" or "Staging".</p></div></div>
+        <div class="panel-body">
+          <form class="inline-form" id="create" novalidate>
+            <input class="input" id="key-name" maxlength="60" placeholder="Key name, for example Production" aria-label="Key name">
+            <button class="btn" type="submit" id="create-btn">Generate key</button>
+          </form>
+          <div class="msg" id="create-msg" role="status" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><div><h2>Active keys</h2><p>Keys are stored as a SHA-256 hash. We cannot show a key again after it is created.</p></div></div>
+        <div class="row-list" id="keys"><div class="empty">Loading your keys…</div></div>
+      </section>
+
+      <div class="modal" id="reveal" role="dialog" aria-modal="true" aria-labelledby="reveal-title">
+        <div class="modal-box">
+          <h2 id="reveal-title">Your new API key</h2>
+          <p>Copy it now and keep it somewhere safe, like a password manager or your server's environment variables.</p>
+          <div class="secret"><code id="new-key"></code><button class="btn" id="copy-key" type="button">Copy</button></div>
+          <div class="warn">This is the only time you will see this key. If you lose it, revoke it and create a new one.</div>
+          <div class="modal-actions"><button class="btn btn-ghost" id="reveal-done" type="button">I have saved it</button></div>
+        </div>
+      </div>
+
+      <div class="modal" id="confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+        <div class="modal-box">
+          <h2 id="confirm-title">Revoke this key?</h2>
+          <p id="confirm-text">Any app using it will stop working immediately. This cannot be undone.</p>
+          <div class="modal-actions">
+            <button class="btn btn-ghost" id="confirm-no" type="button">Cancel</button>
+            <button class="btn btn-danger" id="confirm-yes" type="button">Revoke key</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<script>
+(async function () {
+  var $ = Wilma.$, sb = Wilma.sb();
+  var u = await Wilma.shell("keys");
+  if (!u) return;
+
+  function newKey() {
+    var bytes = new Uint8Array(24);
+    crypto.getRandomValues(bytes);
+    return "wlm_" + Array.from(bytes).map(function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+  }
+  async function sha256(text) {
+    var buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+  }
+
+  var KEY_ICON = '<div class="e-ico">' + Wilma.icon("key") + '</div>';
+  async function load() {
+    var list = $("keys");
+    var r = await sb.from("api_keys").select("id,name,key_prefix,created_at,last_used_at").is("revoked_at", null).order("created_at", { ascending: false });
+    if (r.error) { list.innerHTML = '<div class="empty">Could not load your keys. Refresh to try again.</div>'; return; }
+    if (!r.data.length) { list.innerHTML = '<div class="empty">' + KEY_ICON + 'No keys yet. Create your first one above.</div>'; return; }
+    list.innerHTML = '<div class="row head"><span>Name</span><span class="hide-m">Key</span><span class="hide-m">Last used</span><span></span></div>' +
+      r.data.map(function (k) {
+        return '<div class="row" data-id="' + Wilma.esc(k.id) + '" data-name="' + Wilma.esc(k.name) + '">' +
+          '<div><div class="key-name">' + Wilma.esc(k.name) + '</div><div class="key-sub">Created ' + Wilma.fmtDate(k.created_at) + '</div></div>' +
+          '<span class="key-prefix hide-m">' + Wilma.esc(k.key_prefix) + '…</span>' +
+          '<span class="faint hide-m" style="font-size:13.5px">' + (k.last_used_at ? Wilma.fmtDate(k.last_used_at) : "Never") + '</span>' +
+          '<button class="btn btn-danger-ghost btn-sm revoke" type="button">Revoke</button></div>';
+      }).join("");
+  }
+
+  var pending = null;
+  $("keys").addEventListener("click", function (e) {
+    var b = e.target.closest(".revoke");
+    if (!b) return;
+    var row = b.closest(".row");
+    pending = row.dataset.id;
+    $("confirm-text").textContent = 'Anything using "' + row.dataset.name + '" will stop working immediately. This cannot be undone.';
+    $("confirm").classList.add("show");
+    $("confirm-no").focus();
+  });
+  $("confirm-no").addEventListener("click", function () { $("confirm").classList.remove("show"); pending = null; });
+  $("confirm-yes").addEventListener("click", async function () {
+    if (!pending) return;
+    Wilma.busy(this, true, "Revoking…");
+    await sb.from("api_keys").update({ revoked_at: new Date().toISOString() }).eq("id", pending);
+    Wilma.busy(this, false);
+    $("confirm").classList.remove("show");
+    pending = null;
+    load();
+  });
+
+  $("create").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var msg = $("create-msg"), name = $("key-name").value.trim();
+    Wilma.clearMsg(msg);
+    if (!name) { Wilma.showMsg(msg, "Give the key a name first.", "error"); $("key-name").focus(); return; }
+    Wilma.busy($("create-btn"), true, "Generating…");
+    var full = newKey();
+    var hash = await sha256(full);
+    var r = await sb.from("api_keys").insert({ user_id: u.id, name: name, key_prefix: full.slice(0, 12), key_hash: hash });
+    Wilma.busy($("create-btn"), false);
+    if (r.error) { Wilma.showMsg(msg, r.error.message || "Could not create the key.", "error"); return; }
+    $("new-key").textContent = full;
+    $("reveal").classList.add("show");
+    $("copy-key").focus();
+    $("key-name").value = "";
+    load();
+  });
+  $("copy-key").addEventListener("click", function () {
+    var b = this;
+    navigator.clipboard.writeText($("new-key").textContent).then(function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1600); });
+  });
+  $("reveal-done").addEventListener("click", function () { $("reveal").classList.remove("show"); $("new-key").textContent = ""; });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") { $("confirm").classList.remove("show"); } });
+
+  load();
+})();
+</script>
+</body>
+</html>

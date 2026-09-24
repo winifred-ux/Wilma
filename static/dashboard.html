@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-concept="black">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overview · Wilma</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://rsms.me/">
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+<link rel="stylesheet" href="/wilma.css?v=6">
+<script src="/wilma.js?v=6"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="app">
+  <aside class="side" id="side" aria-label="Sidebar"></aside>
+  <div>
+    <div class="app-top" id="app-top"></div>
+    <main class="main" id="main">
+      <div class="page-head">
+        <div>
+          <h1 id="hello">Welcome</h1>
+          <p>Here is where your Wilma account stands.</p>
+        </div>
+        <a class="btn" href="/api-keys.html">+ New API key</a>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi">
+          <div class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.3-9.3M17 6l3 3"/></svg>Active API keys</div>
+          <div class="v" id="k-keys">–</div>
+          <div class="h" id="k-keys-h">&nbsp;</div>
+        </div>
+        <div class="kpi">
+          <div class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H5.2L4 17.2z"/></svg>Messages screened</div>
+          <div class="v" id="k-msgs">–</div>
+          <div class="h">Last 30 days, across all keys</div>
+        </div>
+        <div class="kpi">
+          <div class="k"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/></svg>Plan</div>
+          <div class="v">Pilot</div>
+          <div class="h">Free · 300 requests a minute per key</div>
+        </div>
+      </div>
+
+      <div class="grid" style="grid-template-columns:1.1fr .9fr;align-items:start" id="dash-grid">
+        <section class="panel">
+          <div class="panel-head">
+            <div><h2>Test console</h2><p>Runs both models. Nothing you type is stored.</p></div>
+          </div>
+          <div class="panel-body">
+            <form id="t-form" novalidate>
+              <label class="label" for="t-msg">Message</label>
+              <textarea class="input" id="t-msg" style="height:110px;padding:12px 14px;resize:vertical" placeholder="Paste an SMS to check"></textarea>
+              <div style="display:flex;gap:10px;margin-top:12px;align-items:center">
+                <button class="btn" type="submit" id="t-go">Check message</button>
+                <span class="small" id="t-status"></span>
+              </div>
+            </form>
+            <div id="t-out" style="margin-top:16px" aria-live="polite"></div>
+          </div>
+        </section>
+
+        <div>
+          <section class="panel">
+            <div class="panel-head"><div><h2>Get started</h2><p>Three steps to your first verdict.</p></div></div>
+            <div class="panel-body" style="padding-top:8px;padding-bottom:8px">
+              <ol class="steps">
+                <li><span class="num" id="s1">1</span><div><div class="st">Create an API key</div><div class="sd">Keys are shown once and stored only as a hash. <a class="link" href="/api-keys.html">Create one</a></div></div></li>
+                <li><span class="num" id="s2">2</span><div><div class="st">Send your first request</div><div class="sd">POST the message text to /verdict with your key.</div></div></li>
+                <li><span class="num">3</span><div><div class="st">Act on the verdict</div><div class="sd">Block, send to review, or pass. <a class="link" href="/docs" target="_blank" rel="noopener">Read the docs</a></div></div></li>
+              </ol>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><div><h2>Quick start</h2></div><button class="btn btn-ghost btn-sm" id="copy-qs" type="button">Copy</button></div>
+            <div class="code-win" style="border-radius:0 0 18px 18px;box-shadow:none">
+<pre id="qs" style="font-size:12.5px;padding:18px"><code><span class="tk-k">curl</span> -X POST https://winifred12-wilma.hf.space/verdict \
+  -H <span class="tk-s">"Content-Type: application/json"</span> \
+  -H <span class="tk-s">"Authorization: Bearer wlm_your_key"</span> \
+  -d <span class="tk-s">'{"text": "Your BVN has been blocked"}'</span></code></pre>
+            </div>
+          </section>
+        </div>
+      </div>
+      <style>@media (max-width: 1000px) { #dash-grid { grid-template-columns: 1fr !important; } }</style>
+    </main>
+  </div>
+</div>
+<script>
+(async function () {
+  var $ = Wilma.$, sb = Wilma.sb();
+  var u = await Wilma.shell("dashboard");
+  if (!u) return;
+  var meta = u.user_metadata || {};
+  var first = (meta.display_name || u.email.split("@")[0]).split(" ")[0];
+  var h = new Date().getHours();
+  var part = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+  $("hello").textContent = part + ", " + first;
+
+  var keys = await sb.from("api_keys").select("id,last_used_at").is("revoked_at", null);
+  var n = keys.error ? 0 : keys.data.length;
+  $("k-keys").textContent = keys.error ? "–" : n;
+  var used = keys.error ? [] : keys.data.filter(function (k) { return k.last_used_at; });
+  $("k-keys-h").textContent = n ? (used.length + " used so far") : "Create one to start calling the API";
+  if (n) { $("s1").classList.add("done"); $("s1").textContent = "✓"; }
+  if (used.length) { $("s2").classList.add("done"); $("s2").textContent = "✓"; }
+
+  var since = new Date(Date.now() - 30 * 864e5).toISOString();
+  var usage = await sb.from("usage_events").select("message_count").gte("created_at", since);
+  if (!usage.error) {
+    var total = usage.data.reduce(function (a, r) { return a + (r.message_count || 0); }, 0);
+    $("k-msgs").textContent = total.toLocaleString("en-GB");
+  } else {
+    $("k-msgs").textContent = "–";
+  }
+
+  $("copy-qs").addEventListener("click", function () {
+    var b = this;
+    navigator.clipboard.writeText($("qs").innerText).then(function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1500); });
+  });
+
+  var NAMES = { block: "Block", review: "Send to review", pass: "Pass" };
+  $("t-form").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var text = $("t-msg").value.trim();
+    if (!text) { $("t-status").textContent = "Paste a message first."; return; }
+    Wilma.busy($("t-go"), true, "Checking…");
+    $("t-status").textContent = "";
+    try {
+      var r = await fetch("/verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: text }) });
+      if (!r.ok) throw new Error(r.status === 503 ? "Models are waking up, try again shortly." : "Error " + r.status);
+      var d = await r.json();
+      var v = NAMES[d.verdict] ? d.verdict : "review";
+      var ops = (d.models || []).map(function (m) {
+        var pct = Math.round(m.scam_probability * 1000) / 10, col = m.is_scam ? "var(--block)" : "var(--pass)";
+        return '<div class="op"><div class="op-row"><span class="op-who">' + Wilma.esc(m.model_id) + '</span><span class="op-said" style="color:' + col + '">' + (m.is_scam ? "scam" : "legitimate") + " · " + pct + '%</span></div><div class="meter"><i style="background:' + col + ';width:' + pct + '%"></i></div></div>';
+      }).join("");
+      $("t-out").innerHTML = '<div class="verdict-card" data-v="' + v + '"><div class="v-top"><span class="v-name" style="font-size:18px">' + NAMES[v] + '</span></div><p class="v-why">' + Wilma.esc(d.action) + '</p></div><div class="opinions">' + ops + '</div><p class="v-meta">' + Math.round(d.latency_ms) + ' ms</p>';
+    } catch (err) {
+      $("t-status").textContent = err.message || "Could not reach Wilma.";
+    }
+    Wilma.busy($("t-go"), false);
+  });
+})();
+</script>
+</body>
+</html>

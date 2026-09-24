@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-concept="black">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Settings · Wilma</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://rsms.me/">
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+<link rel="stylesheet" href="/wilma.css?v=6">
+<script src="/wilma.js?v=6"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="app">
+  <aside class="side" id="side" aria-label="Sidebar"></aside>
+  <div>
+    <div class="app-top" id="app-top"></div>
+    <main class="main" id="main">
+      <div class="page-head"><div><h1>Settings</h1><p>Your profile, password and appearance.</p></div></div>
+
+      <section class="panel">
+        <div class="panel-head"><div><h2>Profile</h2><p>How you appear in Wilma.</p></div></div>
+        <form class="panel-body" id="profile" novalidate>
+          <div class="form-grid">
+            <div class="field" style="margin-top:0"><label for="name">Name</label><input class="input" id="name" maxlength="80"></div>
+            <div class="field" style="margin-top:0"><label for="org">Organisation</label><input class="input" id="org" maxlength="80" placeholder="Your company"></div>
+            <div class="field"><label for="email">Email</label><input class="input" id="email" readonly></div>
+            <div class="field"><label for="joined">Member since</label><input class="input" id="joined" readonly></div>
+          </div>
+          <div style="margin-top:20px"><button class="btn" type="submit" id="profile-btn">Save profile</button></div>
+          <div class="msg" id="profile-msg" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><div><h2>Password</h2><p>Use at least 8 characters.</p></div></div>
+        <form class="panel-body" id="pw" novalidate>
+          <div class="form-grid">
+            <div class="field" style="margin-top:0"><label for="pw1">New password</label><div class="pwd"><input class="input" id="pw1" type="password" autocomplete="new-password"><button class="eye" type="button" aria-label="Show password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+            <div class="field" style="margin-top:0"><label for="pw2">Confirm password</label><input class="input" id="pw2" type="password" autocomplete="new-password"></div>
+          </div>
+          <div style="margin-top:20px"><button class="btn" type="submit" id="pw-btn">Update password</button></div>
+          <div class="msg" id="pw-msg" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+
+      <section class="panel appearance-panel">
+        <div class="panel-head"><div><h2>Appearance</h2><p>Saved on this device.</p></div>
+          <div class="seg" id="theme" role="group" aria-label="Theme">
+            <button type="button" data-t="system">System</button>
+            <button type="button" data-t="light">Light</button>
+            <button type="button" data-t="dark">Dark</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel danger">
+        <div class="panel-head"><div><h2 style="color:var(--block)">Danger zone</h2><p>These actions affect every app using your keys.</p></div></div>
+        <div class="panel-body" style="display:grid;gap:18px">
+          <div style="display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap">
+            <div><div class="key-name">Revoke all API keys</div><div class="key-sub">Every key stops working at once. Use this if a key may have leaked.</div></div>
+            <button class="btn btn-danger-ghost btn-sm" type="button" id="revoke-all">Revoke all keys</button>
+          </div>
+          <div style="display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap">
+            <div><div class="key-name">Delete account</div><div class="key-sub">We remove your account, keys and usage records, as set out in the privacy policy.</div></div>
+            <a class="btn btn-danger-ghost btn-sm" id="delete" href="#">Request deletion</a>
+          </div>
+          <div class="msg" id="danger-msg" role="status" aria-live="polite"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<script>
+(async function () {
+  var $ = Wilma.$, sb = Wilma.sb();
+  var u = await Wilma.shell("settings");
+  if (!u) return;
+  var meta = u.user_metadata || {};
+  $("name").value = meta.display_name || "";
+  $("org").value = meta.organization || "";
+  $("email").value = u.email;
+  $("joined").value = Wilma.fmtDate(u.created_at, true);
+  $("delete").href = "mailto:winiajah3@yahoo.com?subject=" + encodeURIComponent("Delete my Wilma account") + "&body=" + encodeURIComponent("Please delete the Wilma account for " + u.email + ".");
+
+  $("profile").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var msg = $("profile-msg");
+    Wilma.busy($("profile-btn"), true, "Saving…");
+    var r = await sb.auth.updateUser({ data: { display_name: $("name").value.trim(), organization: $("org").value.trim() } });
+    Wilma.busy($("profile-btn"), false);
+    if (r.error) Wilma.showMsg(msg, Wilma.humanize(r.error), "error");
+    else { Wilma.showMsg(msg, "Profile saved.", "success"); var nm = $("name").value.trim() || u.email.split("@")[0]; $("who-name").textContent = nm; $("av").textContent = nm.charAt(0).toUpperCase(); }
+  });
+
+  $("pw").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var msg = $("pw-msg"), a = $("pw1").value, b = $("pw2").value;
+    Wilma.clearMsg(msg);
+    if (a.length < 8) { Wilma.showMsg(msg, "Use at least 8 characters.", "error"); return; }
+    if (a !== b) { Wilma.showMsg(msg, "The two passwords do not match.", "error"); return; }
+    Wilma.busy($("pw-btn"), true, "Updating…");
+    var r = await sb.auth.updateUser({ password: a });
+    Wilma.busy($("pw-btn"), false);
+    if (r.error) Wilma.showMsg(msg, Wilma.humanize(r.error), "error");
+    else { Wilma.showMsg(msg, "Password updated.", "success"); $("pw").reset(); }
+  });
+
+  var segs = document.querySelectorAll("#theme button");
+  function mark() { var t = Wilma.storedTheme(); segs.forEach(function (b) { b.classList.toggle("active", b.dataset.t === t); }); }
+  segs.forEach(function (b) { b.addEventListener("click", function () { Wilma.setTheme(b.dataset.t); mark(); }); });
+  mark();
+
+  var armed = false;
+  $("revoke-all").addEventListener("click", async function () {
+    var msg = $("danger-msg");
+    if (!armed) { armed = true; this.textContent = "Click again to confirm"; Wilma.showMsg(msg, "This will stop every app using your keys.", "error"); return; }
+    Wilma.busy(this, true, "Revoking…");
+    var r = await sb.from("api_keys").update({ revoked_at: new Date().toISOString() }).is("revoked_at", null).eq("user_id", u.id);
+    this.disabled = false; this.textContent = "Revoke all keys"; armed = false;
+    if (r.error) Wilma.showMsg(msg, r.error.message, "error");
+    else Wilma.showMsg(msg, "All keys revoked. Create a new one on the API keys page.", "success");
+  });
+})();
+</script>
+</body>
+</html>

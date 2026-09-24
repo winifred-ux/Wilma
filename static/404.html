@@ -1,28 +1,37 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark" data-concept="black">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Page not found — Wilma</title>
+<title>Page not found · Wilma</title>
 <meta name="robots" content="noindex">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/wilma.css">
+<link rel="preconnect" href="https://rsms.me/">
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+<link rel="stylesheet" href="/wilma.css?v=6">
+<script src="/wilma.js?v=6"></script>
 </head>
 <body>
-<div class="backdrop" aria-hidden="true"></div>
-<main class="wrap narrow" style="min-height:70vh;display:flex;align-items:center">
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="wrap nav-row">
+    <a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M5 9l5 15 6-13 6 13 5-15" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Wilma</a>
+    <div class="nav-actions">
+      <button class="icon-btn theme-btn" type="button" data-theme-toggle aria-label="Toggle dark mode">
+        <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+      <a class="btn btn-ghost btn-sm" href="/signin.html">Sign in</a>
+      <a class="btn btn-sm" href="/">Home</a>
+    </div>
+  </div>
+</header>
+<main id="main" class="nf">
   <div>
-    <p class="eyebrow">404</p>
-    <h1 style="font-size:clamp(1.9rem,1.5rem + 1.6vw,2.6rem)">
-      That page does not exist.
-    </h1>
-    <p class="lede" style="margin-top:1rem">
-      If you were looking for the API, the reference is at
-      <a href="/docs">/docs</a>. Everything else starts from the home page.
-    </p>
-    <p style="margin-top:1.75rem">
-      <a class="btn" href="/">Back to Wilma</a>
-    </p>
+    <div class="code">404</div>
+    <h1 style="font-size:clamp(26px,3.4vw,36px);margin-top:10px">That page does not exist.</h1>
+    <p class="muted" style="margin-top:14px;max-width:440px;margin-left:auto;margin-right:auto">If you were looking for the API, the reference is at <a class="link" href="/docs">/docs</a>. Everything else starts from the home page.</p>
+    <div class="hero-cta" style="margin-top:28px"><a class="btn btn-lg" href="/">Back to Wilma</a><a class="btn btn-ghost btn-lg" href="/#demo">Test a message</a></div>
   </div>
 </main>
 </body>
