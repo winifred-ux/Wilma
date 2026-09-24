@@ -766,6 +766,25 @@ _LONG_CACHE = (".css", ".svg", ".png", ".jpg", ".webp", ".woff2", ".ico")
 async def static_cache_headers(request: Request, call_next):
     response = await call_next(request)
     path = request.url.path
+
+    # Security headers on every response
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    # Content Security Policy for the website pages only (not /docs, which loads Swagger from a CDN)
+    if path == "/" or path.endswith(".html"):
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline' https://rsms.me; "
+            "font-src 'self' https://rsms.me; "
+            "img-src 'self' data:; "
+            "connect-src 'self' https://upapunmvqqwdkqdfckjr.supabase.co; "
+            "frame-ancestors 'self' https://huggingface.co; "
+            "base-uri 'self'; form-action 'self'; object-src 'none'"
+        )
+
     if path.endswith(_LONG_CACHE):
         response.headers["Cache-Control"] = "public, max-age=86400"
     elif path == "/" or path.endswith(".html"):
