@@ -108,7 +108,7 @@
   W.icon = function (name) {
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONS[name] || "") + "</svg>";
   };
-  W.LOGO = '<svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M5 9l5 15 6-13 6 13 5-15" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  W.LOGO = '<svg class="brand-mark" viewBox="0 0 200 200" fill="none" aria-hidden="true"><circle cx="100" cy="100" r="100" fill="#161826"/><circle cx="80" cy="96" r="34" stroke="#F4F1EA" stroke-width="10"/><circle cx="120" cy="96" r="34" stroke="#D4FF3A" stroke-width="10"/></svg>';
 
   W.shell = async function (page) {
     var side = W.$("side");
