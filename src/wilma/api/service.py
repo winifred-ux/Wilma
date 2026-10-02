@@ -843,6 +843,15 @@ async def static_cache_headers(request: Request, call_next):
     response = await call_next(request)
     path = request.url.path
 
+    # Pretty links: /chat serves chat.html, /privacy serves privacy.html.
+    # StaticFiles answers these with its own 404 page, so swap that here.
+    if response.status_code == 404 and request.method in ("GET", "HEAD"):
+        slug = path.strip("/")
+        if slug and "/" not in slug and "." not in slug:
+            pretty = _STATIC_DIR / f"{slug}.html"
+            if pretty.is_file():
+                response = FileResponse(str(pretty))
+
     # Security headers on every response
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
@@ -867,7 +876,7 @@ async def static_cache_headers(request: Request, call_next):
         response.headers["Cache-Control"] = "no-store"
     elif path.endswith(_LONG_CACHE):
         response.headers["Cache-Control"] = "public, max-age=86400"
-    elif path == "/" or path.endswith(".html"):
+    elif is_page:
         response.headers["Cache-Control"] = "public, max-age=300, must-revalidate"
     return response
 
