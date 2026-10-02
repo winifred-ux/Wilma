@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
 <link rel="stylesheet" href="/wilma.css?v=7">
 <script src="/wilma.js?v=7"></script>
+<link rel="stylesheet" href="/chat-widget.css?v=2">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -62,6 +63,11 @@
   prefix, and the dates it was created, last used and revoked. API keys
   themselves are stored as a cryptographic hash, so we cannot read your key
   and neither could anyone who obtained a copy of our database.</p>
+  <p><strong>Messages you send to the team.</strong> If you use
+  "Talk to the team" in the chat box, we store your name, email address, the
+  topic you picked, your message and the page you sent it from, so we can reply.
+  We do not share it or add you to a mailing list. Messages you paste into
+  "Check a message" are not stored (see Message content above).</p>
   <p><strong>Ordinary server records.</strong> Our hosting
   provider records standard connection information such as IP address and
   request time, as any web server does. Rate limiting uses the calling IP
@@ -83,7 +89,8 @@
   <p>Message content: not retained. Usage records: retained while
   your account is active and for as long as we are required to keep billing
   records afterwards. Account and key records: until you delete the key or the
-  account, after which they are removed.</p>
+  account, after which they are removed. Messages to the team: up to one year
+  after our last reply, or sooner if you ask us to delete them.</p>
 
   <h2 id="who-else-sees-it">Who else sees it</h2>
   <p>We use Hugging Face for hosting and Supabase for the database
@@ -111,5 +118,6 @@
     <div class="foot-bottom"><span>Made in Lagos by Winifred Ajah</span></div>
   </div>
 </footer>
+<script src="/chat-widget.js?v=2" defer></script>
 </body>
 </html>

@@ -733,6 +733,82 @@ def _verdict_impl(req, background, key_info) -> "VerdictResponse":
 
 
 # ---------------------------------------------------------------------------
+# Contact the team ("Talk to the team" tab in the chat box)
+#
+# Saves a visitor's name, email and question to the support_messages table so
+# Winifred can reply by email. Only the service key can read that table.
+# ---------------------------------------------------------------------------
+import re as _re
+
+_EMAIL_RE = _re.compile(r"^[^@\s]{1,64}@[^@\s]{1,190}\.[A-Za-z]{2,24}$")
+_CONTACT_LIMIT_PER_HOUR = 5
+_contact_hits: dict[str, deque] = defaultdict(deque)
+
+
+class ContactRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=80)
+    email: str = Field(..., min_length=5, max_length=254)
+    topic: str = Field("general", max_length=40)
+    message: str = Field(..., min_length=2, max_length=2000)
+    page: str = Field("", max_length=120)
+    website: str = Field("", max_length=200)  # honeypot: real people leave this empty
+
+
+@app.post("/contact", tags=["meta"])
+async def contact(req: ContactRequest, request: Request):
+    """Store a message for the Wilma team. Returns {"ok": true} when saved."""
+    if req.website.strip():
+        return {"ok": True}  # quietly drop bots
+
+    email = req.email.strip()
+    if not _EMAIL_RE.match(email):
+        raise HTTPException(status_code=422, detail="Please enter a valid email address.")
+
+    forwarded = request.headers.get("x-forwarded-for", "")
+    ip = forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "unknown")
+    now = time.time()
+    hits = _contact_hits[ip]
+    while hits and now - hits[0] > 3600:
+        hits.popleft()
+    if len(hits) >= _CONTACT_LIMIT_PER_HOUR:
+        raise HTTPException(status_code=429, detail="You've sent a few messages already. Please try again in an hour.")
+
+    if not SUPABASE_URL_FOR_AUTH or not SUPABASE_SERVICE_KEY_FOR_AUTH:
+        raise HTTPException(status_code=503, detail="Messages can't be received right now.")
+
+    topic = req.topic.strip().lower()
+    if topic not in {"general", "bank", "bug", "press"}:
+        topic = "general"
+
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            r = await client.post(
+                f"{SUPABASE_URL_FOR_AUTH}/rest/v1/support_messages",
+                json={
+                    "name": req.name.strip(),
+                    "email": email,
+                    "topic": topic,
+                    "message": req.message.strip(),
+                    "page": req.page.strip()[:120],
+                },
+                headers={
+                    "apikey": SUPABASE_SERVICE_KEY_FOR_AUTH,
+                    "Authorization": f"Bearer {SUPABASE_SERVICE_KEY_FOR_AUTH}",
+                    "Content-Type": "application/json",
+                    "Prefer": "return=minimal",
+                },
+            )
+        if r.status_code >= 300:
+            print(f"[wilma-api] /contact insert failed: {r.status_code} {r.text[:200]}")
+            raise HTTPException(status_code=502, detail="Your message couldn't be saved. Please try again later.")
+    except httpx.RequestError:
+        raise HTTPException(status_code=502, detail="Your message couldn't be saved. Please try again later.")
+
+    hits.append(now)
+    return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
 # Demo front end. Mounted last: a StaticFiles mount at "/" is a catch-all and
 # would shadow every route declared after it.
 # ---------------------------------------------------------------------------
@@ -756,7 +832,7 @@ from fastapi.responses import FileResponse, JSONResponse  # noqa: E402
 from starlette.exceptions import HTTPException as StarletteHTTPException  # noqa: E402
 
 _API_PREFIXES = (
-    "/classify", "/verdict", "/usage", "/health", "/api",
+    "/classify", "/verdict", "/usage", "/contact", "/health", "/api",
     "/docs", "/redoc", "/openapi.json",
 )
 _LONG_CACHE = (".css", ".svg", ".png", ".jpg", ".webp", ".woff2", ".ico")

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat with Wilma</title>
+<meta name="description" content="Paste any suspicious SMS and Wilma checks it with two AI models. Block it, check it first, or you're fine.">
+<link rel="canonical" href="https://winifred12-wilma.hf.space/chat.html">
+<meta name="theme-color" content="#05060B">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/fonts/unbounded-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/home.css?v=9">
+<link rel="stylesheet" href="/chat-widget.css?v=2">
+<style>
+  .chat-hero{position:relative;overflow:hidden;margin-top:-85px;padding-top:85px;min-height:100vh}
+  .chat-hero .intro{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;padding-top:24px}
+  .chat-hero .intro h1{margin:0;font-family:var(--u);font-size:clamp(30px,4vw,52px);font-weight:900;letter-spacing:-.05em;line-height:1}
+  .chat-hero .intro h1 em{font-style:normal;color:var(--lime)}
+  .chat-hero .intro p{margin:0;color:var(--soft);font-size:16px;max-width:420px;line-height:1.55}
+</style>
+</head>
+<body data-no-widget>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav" id="nav">
+  <div class="wrap nav-row">
+    <a class="brand" href="/" aria-label="Wilma home">
+      <svg width="40" height="40" viewBox="0 0 200 200" fill="none" aria-hidden="true"><circle cx="100" cy="100" r="100" fill="#161826"/><circle cx="80" cy="96" r="34" stroke="#F4F1EA" stroke-width="10"/><circle cx="120" cy="96" r="34" stroke="#D4FF3A" stroke-width="10"/></svg>
+      <span>wilma</span>
+    </a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="/#how">How she works</a>
+      <a href="/#banks">For banks</a>
+      <a href="/#evidence">Evidence</a>
+      <a href="/#developers">Developers</a>
+    </nav>
+    <div class="nav-cta" id="nav-cta">
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button type="button" aria-pressed="true">EN</button>
+        <button type="button" class="pg" id="pidgin-btn" aria-pressed="false" aria-disabled="true" aria-describedby="pidgin-tip">Pidgin <i>soon</i>
+          <span class="tip" id="pidgin-tip" role="tooltip">Pidgin is coming soon. We're working on it!</span>
+        </button>
+      </div>
+      <a class="signin" href="/signin.html">Sign in</a>
+      <a class="key" href="/signup.html"><span class="hide-sm">Get an&nbsp;</span>API key</a>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="chat-hero">
+  <div class="glow p"></div>
+  <div class="glow l"></div>
+  <div class="wrap" style="position:relative">
+    <div class="intro">
+      <h1>Ask <em>Wilma.</em></h1>
+      <p>Paste messages one after another. Your chat stays in this tab only and is gone when you close it.</p>
+    </div>
+
+    <div class="cp ww">
+      <section class="cp-main" aria-label="Chat with Wilma">
+        <div class="cp-top">
+          <svg class="ww-av" viewBox="0 0 200 200" fill="none" aria-hidden="true"><circle cx="100" cy="100" r="100" fill="#161826"/><circle cx="80" cy="96" r="34" stroke="#F4F1EA" stroke-width="10"/><circle cx="120" cy="96" r="34" stroke="#D4FF3A" stroke-width="10"/></svg>
+          <div><div class="ww-name">wilma</div><div class="ww-sub" id="cp-status">● online</div></div>
+          <button class="cp-clear" type="button" id="cp-clear">Clear chat</button>
+        </div>
+        <div class="ww-log" id="cp-log" aria-live="polite"></div>
+        <div class="ww-chips" id="cp-chips"></div>
+        <form class="ww-form" id="cp-form" autocomplete="off">
+          <label for="cp-msg" class="ww-hp">Message for Wilma</label>
+          <textarea id="cp-msg" rows="1" maxlength="2000" placeholder="Paste a message..."></textarea>
+          <button class="ww-send" id="cp-send" type="submit">Check</button>
+        </form>
+        <div class="ww-foot"><span>Wilma can be wrong. If money is involved, confirm with your bank on a number you trust.</span></div>
+      </section>
+
+      <aside class="cp-side">
+        <div class="cp-card">
+          <h2>Her three answers</h2>
+          <div class="cp-key"><svg viewBox="0 0 200 200" fill="none" aria-hidden="true"><circle cx="78" cy="94" r="40" stroke="#FF5B2E" stroke-width="9"/><circle cx="122" cy="94" r="40" stroke="#FF5B2E" stroke-width="9"/><path d="M64 96H92M108 96H136" stroke="#FF5B2E" stroke-width="11" stroke-linecap="round"/></svg><span><b>Block it</b>Both minds say scam. Don't pay or click.</span></div>
+          <div class="cp-key"><svg viewBox="0 0 200 200" fill="none" aria-hidden="true"><circle cx="78" cy="94" r="40" stroke="#FFC53D" stroke-width="9"/><circle cx="122" cy="94" r="40" stroke="#FFC53D" stroke-width="9" stroke-dasharray="10 9"/><circle cx="88" cy="84" r="12" fill="#FFC53D"/><circle cx="132" cy="84" r="12" fill="#FFC53D"/></svg><span><b>Check it first</b>Her minds disagree. Confirm with your bank.</span></div>
+          <div class="cp-key"><svg viewBox="0 0 200 200" fill="none" aria-hidden="true"><circle cx="78" cy="94" r="40" stroke="#D4FF3A" stroke-width="9"/><circle cx="122" cy="94" r="40" stroke="#D4FF3A" stroke-width="9"/><circle cx="82" cy="92" r="12" fill="#D4FF3A"/><circle cx="126" cy="92" r="12" fill="#D4FF3A"/></svg><span><b>You're fine</b>Neither mind found a scam signal.</span></div>
+        </div>
+        <div class="cp-card">
+          <h2>Need a person?</h2>
+          <span style="font-size:13px;line-height:1.5;color:#C9CAD9">Questions, bank pilots or something broken? Send Winifred a message and she'll reply by email.</span>
+          <button class="cp-team" type="button" id="cp-team">Talk to the team</button>
+        </div>
+      </aside>
+    </div>
+
+    <div class="ww" id="cp-team-wrap" hidden style="max-width:520px;margin:0 auto 60px"></div>
+  </div>
+</main>
+
+<script src="/chat-widget.js?v=2"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var chat = WilmaChat.mountChecker({
+    log: $("cp-log"), form: $("cp-form"), input: $("cp-msg"), send: $("cp-send"),
+    chips: $("cp-chips"), status: $("cp-status"), persistKey: "wilma-chat-page"
+  });
+  $("cp-clear").addEventListener("click", function () { chat.clear(); $("cp-msg").focus(); });
+
+  // "Talk to the team" opens the same form used in the chat bubble
+  $("cp-team").addEventListener("click", function () {
+    var wrap = $("cp-team-wrap");
+    if (wrap.hidden) {
+      wrap.innerHTML = '<div class="cp-card" style="padding:0;overflow:hidden">' + WilmaChat.teamPane() + '</div>';
+      WilmaChat.wireTeam(wrap);
+      wrap.hidden = false;
+    }
+    wrap.scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(function () { var i = wrap.querySelector("input"); if (i) i.focus({ preventScroll: true }); }, 500);
+  });
+
+  // nav background + Pidgin "coming soon" bubble
+  var nav = $("nav");
+  window.addEventListener("scroll", function () { nav.classList.toggle("scrolled", window.scrollY > 10); }, { passive: true });
+  var pg = $("pidgin-btn");
+  pg.addEventListener("click", function (e) {
+    e.stopPropagation(); pg.classList.add("show");
+    clearTimeout(pg._t); pg._t = setTimeout(function () { pg.classList.remove("show"); }, 2600);
+  });
+  document.addEventListener("click", function () { pg.classList.remove("show"); });
+  if (window.matchMedia("(pointer: fine)").matches) $("cp-msg").focus({ preventScroll: true });
+})();
+</script>
+</body>
+</html>
