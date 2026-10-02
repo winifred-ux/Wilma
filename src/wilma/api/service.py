@@ -849,7 +849,8 @@ async def static_cache_headers(request: Request, call_next):
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     # Content Security Policy for the website pages only (not /docs, which loads Swagger from a CDN)
-    if path == "/" or path.endswith(".html"):
+    is_page = path == "/" or path.endswith(".html") or response.headers.get("content-type", "").startswith("text/html")
+    if is_page and not path.startswith(("/docs", "/redoc")):
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline'; "
@@ -861,7 +862,10 @@ async def static_cache_headers(request: Request, call_next):
             "base-uri 'self'; form-action 'self'; object-src 'none'"
         )
 
-    if path.endswith(_LONG_CACHE):
+    if response.status_code >= 400:
+        # never let a browser remember a "page not found"
+        response.headers["Cache-Control"] = "no-store"
+    elif path.endswith(_LONG_CACHE):
         response.headers["Cache-Control"] = "public, max-age=86400"
     elif path == "/" or path.endswith(".html"):
         response.headers["Cache-Control"] = "public, max-age=300, must-revalidate"
@@ -872,6 +876,13 @@ async def static_cache_headers(request: Request, call_next):
 async def not_found_handler(request: Request, exc: StarletteHTTPException):
     wants_html = "text/html" in request.headers.get("accept", "")
     is_api = request.url.path.startswith(_API_PREFIXES)
+    if exc.status_code == 404 and not is_api:
+        # pretty links: /chat serves chat.html, /privacy serves privacy.html
+        slug = request.url.path.strip("/")
+        if slug and "/" not in slug and "." not in slug:
+            pretty = _STATIC_DIR / f"{slug}.html"
+            if pretty.is_file():
+                return FileResponse(str(pretty), headers={"Cache-Control": "public, max-age=300, must-revalidate"})
     if exc.status_code == 404 and wants_html and not is_api:
         page = _STATIC_DIR / "404.html"
         if page.is_file():
