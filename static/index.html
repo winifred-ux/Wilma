@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary">
 <link rel="preload" href="/fonts/unbounded-latin-900-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/manrope-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/home.css?v=7">
+<link rel="stylesheet" href="/home.css?v=8">
 <script>document.documentElement.classList.add("js")</script>
 </head>
 <body>
@@ -35,8 +35,14 @@
       <a href="#developers">Developers</a>
     </nav>
     <div class="nav-cta" id="nav-cta">
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button type="button" aria-pressed="true">EN</button>
+        <button type="button" class="pg" id="pidgin-btn" aria-pressed="false" aria-disabled="true" aria-describedby="pidgin-tip">Pidgin <i>soon</i>
+          <span class="tip" id="pidgin-tip" role="tooltip">Pidgin is coming soon. We're working on it!</span>
+        </button>
+      </div>
       <a class="signin" href="/signin.html">Sign in</a>
-      <a class="key" href="/signup.html">Get an API key</a>
+      <a class="key" href="/signup.html"><span class="hide-sm">Get an&nbsp;</span>API key</a>
     </div>
   </div>
 </header>
@@ -303,6 +309,6 @@ verdict = r.json()[<span class="s">"verdict"</span>]  <span class="c"># "block",
 </footer>
 
 <script src="/three.min.js"></script>
-<script src="/home.js?v=7"></script>
+<script src="/home.js?v=8"></script>
 </body>
 </html>

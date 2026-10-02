@@ -14,11 +14,23 @@
     for (var i = 0; i < localStorage.length; i++) {
       var k = localStorage.key(i);
       if (/^sb-.*-auth-token$/.test(k) && localStorage.getItem(k)) {
-        $("nav-cta").innerHTML = '<a class="key" href="/dashboard.html">Dashboard</a>';
+        var si = document.querySelector("#nav-cta .signin"); if (si) si.remove();
+        var ky = document.querySelector("#nav-cta .key"); if (ky) { ky.href = "/dashboard.html"; ky.textContent = "Dashboard"; }
         break;
       }
     }
   } catch (e) {}
+
+  // ---------- Pidgin: coming soon ----------
+  var pg = $("pidgin-btn");
+  if (pg) {
+    pg.addEventListener("click", function (e) {
+      e.stopPropagation();
+      pg.classList.add("show");
+      clearTimeout(pg._t); pg._t = setTimeout(function () { pg.classList.remove("show"); }, 2600);
+    });
+    document.addEventListener("click", function () { pg.classList.remove("show"); });
+  }
 
   // ---------- 3D face (three.js) ----------
   var face = null;

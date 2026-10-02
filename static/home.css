@@ -49,7 +49,7 @@ button{font:inherit}
 .nav-cta .signin{text-decoration:none;font-weight:800;font-size:14px;color:var(--soft);padding:0 10px;min-height:44px;display:flex;align-items:center}
 .nav-cta .signin:hover{color:var(--lime)}
 .nav-cta .key{min-height:44px;padding:0 20px;border-radius:999px;background:var(--cream);color:var(--black);display:flex;align-items:center;font-weight:800;font-size:14px;text-decoration:none}
-@media (max-width:900px){.nav-links{display:none}}
+@media (max-width:1120px){.nav-links{display:none}}
 @media (max-width:420px){.nav-cta .signin{display:none}}
 
 /* hero */
@@ -247,3 +247,12 @@ button{font:inherit}
   html{scroll-behavior:auto}
   .js .reveal:not(.in),.js .tr-card:not(.in) .tr-row{opacity:1;transform:none}
 }
+
+/* language toggle: Pidgin coming soon */
+.lang-toggle{display:flex;padding:4px;border-radius:999px;background:#12131E;border:1px solid #262839}
+.lang-toggle button{min-height:36px;padding:0 14px;border-radius:999px;border:0;background:transparent;color:var(--soft);font-family:var(--m);font-weight:800;font-size:13px;display:flex;align-items:center;gap:6px;position:relative;cursor:pointer}
+.lang-toggle button[aria-pressed=true]{background:var(--lime);color:var(--black);cursor:default}
+.lang-toggle .pg i{font-style:normal;font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 6px;border-radius:999px;background:rgba(255,197,61,.16);color:var(--amber);border:1px solid rgba(255,197,61,.35)}
+.lang-toggle .tip{position:absolute;top:calc(100% + 12px);right:0;width:220px;padding:10px 12px;border-radius:12px;background:var(--black);border:1px solid var(--line3);color:var(--cream);font-weight:700;font-size:13px;line-height:1.4;text-align:left;white-space:normal;opacity:0;transform:translateY(-4px);pointer-events:none;transition:opacity .2s,transform .2s;z-index:60;box-shadow:0 20px 40px -12px rgba(0,0,0,.8)}
+.lang-toggle .pg:hover .tip,.lang-toggle .pg:focus-visible .tip,.lang-toggle .pg.show .tip{opacity:1;transform:none}
+@media (max-width:560px){.hide-sm{display:none}.lang-toggle .pg i{display:none}.lang-toggle button{padding:0 10px;font-size:12px}.nav-cta .key{padding:0 14px}.brand span{font-size:19px}.nav-row{gap:10px}}
